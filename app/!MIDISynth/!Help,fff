@@ -1,0 +1,42 @@
+!MIDISynth
+==========
+
+A General MIDI SoundFont and a small MIDI file player for RISC OS 5.
+Programs built with the midisynth library use the SoundFont in here to
+play music, so you only need one copy on your computer.
+
+Installing
+----------
+Copy !MIDISynth into !Boot.Resources (open !Boot, then Resources) so it
+is set up every time you start the computer. You can also just
+double-click it once before running a program that needs it.
+
+It sets:
+
+  MIDISynth$SoundFont   the SoundFont file programs should use
+
+To use a different SoundFont, replace the file called SoundFont inside
+!MIDISynth, or set MIDISynth$SoundFont to your own .sf2 file after
+!MIDISynth has booted.
+
+Playing a MIDI file
+-------------------
+At the command line (F12, or a Task window):
+
+  *MIDIPlay [-l] [-v volume] <MIDI file> [SoundFont]
+
+  -l          loop the song
+  -v volume   volume in percent (default 100)
+
+Press Escape to stop.
+
+Needs RISC OS 5 with the SharedSound, StreamManager and
+SharedSoundBuffer modules (as supplied with current RISC OS 5 releases).
+
+Licences
+--------
+midiplay and the midisynth library: MIT licence, Copyright (c) 2026
+Andrew Youll. Uses TinySoundFont by Bernhard Schelling (MIT licence).
+
+SoundFont: TimGM6mb by Tim Brechbill, GNU General Public Licence v2.
+See SFLicence for details and where to get its source.

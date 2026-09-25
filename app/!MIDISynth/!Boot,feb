@@ -1,0 +1,5 @@
+| !MIDISynth boot file
+| Tells programs where the General MIDI SoundFont is, and adds *MIDIPlay.
+Set MIDISynth$Dir <Obey$Dir>
+IfThere <MIDISynth$Dir>.SoundFont Then Set MIDISynth$SoundFont <MIDISynth$Dir>.SoundFont
+Set Alias$MIDIPlay Run <MIDISynth$Dir>.midiplay %%*0
