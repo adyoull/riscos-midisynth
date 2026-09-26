@@ -2,5 +2,6 @@
 | Tells programs where the General MIDI SoundFont is, and adds *MIDIPlay.
 | The sound modules are loaded when needed, not at boot (see LoadSound).
 Set MIDISynth$Dir <Obey$Dir>
+IconSprites <MIDISynth$Dir>.!Sprites
 IfThere <MIDISynth$Dir>.SoundFont Then Set MIDISynth$SoundFont <MIDISynth$Dir>.SoundFont
 Set Alias$MIDIPlay Obey <MIDISynth$Dir>.Play %%*0

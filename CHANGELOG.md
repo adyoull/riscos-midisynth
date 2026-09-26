@@ -11,6 +11,9 @@
   SharedSoundBuffer, and link to John Duffell's site on the Internet
   Archive. They are not included: his terms don't allow publishing them
   on other web sites.
+- `!Boot` loads `!Sprites`, so `!MIDISynth` shows its icon. It didn't
+  before: when an app has a `!Boot`, the Filer leaves loading the
+  sprites to it.
 - No changes to the library or `midiplay`.
 
 ## 0.3.0 (not yet released)
