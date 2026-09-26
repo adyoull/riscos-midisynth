@@ -51,15 +51,20 @@ Current RISC OS 5 releases have them in System:Modules, and !MIDISynth
 loads them from there when they're needed. Double-clicking !MIDISynth
 checks for them, and gives an error if one is missing.
 
-StreamManager and SharedSoundBuffer are by John Duffell. They are not
-included with !MIDISynth, because nothing in their archive gives
-permission to pass them on. If you don't have them, download ssb.zip
-from the !RDPClient page on Alan Sellors' website:
+StreamManager and SharedSoundBuffer are freeware by John Duffell. His
+terms say they may not be published on other web sites, so they are not
+included with !MIDISynth. If you don't have them, download ssb.zip from
+the !RDPClient page on Alan Sellors' website, where they are hosted by
+kind permission of the author:
 
   https://orac.co.uk/software/rdpclient/
 
 then merge its !System into yours: open !Boot, click System, and drag
 the !System from ssb.zip into the System merge window.
+
+John Duffell's own site (now on the Internet Archive) has more details:
+
+  https://web.archive.org/web/20110920080106/http://www.duffell.riscos.me.uk/
 
 Licences
 --------

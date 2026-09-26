@@ -115,10 +115,14 @@ make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/MIDISynth-0.3.1.zip
   current RISC OS 5 releases. `!MIDISynth` loads them when `*MIDIPlay`
   runs (its `LoadSound` file), and reports a clear error if one is
   missing.
-  - StreamManager and SharedSoundBuffer are © John Duffell 2004. Their
-    archive (`ssb.zip`, from the !RDPClient page at
-    <https://orac.co.uk/software/rdpclient/>) gives no licence to pass
-    them on, so they are **not** included in the `!MIDISynth` zip.
+  - StreamManager and SharedSoundBuffer are freeware, © John Duffell
+    2004. His terms allow passing them on intact but not publishing them
+    on other web sites (you must link to his site), so they are **not**
+    included in the `!MIDISynth` zip. Get `ssb.zip` from the !RDPClient
+    page at <https://orac.co.uk/software/rdpclient/>, where they are
+    hosted by kind permission of the author. John Duffell's own site is
+    on the Internet Archive:
+    <https://web.archive.org/web/20110920080106/http://www.duffell.riscos.me.uk/>.
   - Programs that use `midisynth_output_*` should load the modules
     themselves first, for example with the same `RMEnsure` lines.
 - CPU: rendering General MIDI in software takes a fair amount of CPU. On a

@@ -8,8 +8,9 @@
   an error that points to `!Help`. The check runs when `*MIDIPlay` is
   used and when `!MIDISynth` is double-clicked, not at boot.
 - `!Help` and the README say where to get StreamManager and
-  SharedSoundBuffer. They are not included, because nothing in their
-  archive gives permission to pass them on.
+  SharedSoundBuffer, and link to John Duffell's site on the Internet
+  Archive. They are not included: his terms don't allow publishing them
+  on other web sites.
 - No changes to the library or `midiplay`.
 
 ## 0.3.0 (not yet released)
