@@ -85,7 +85,7 @@ You need the [GCCSDK](https://www.riscos.info/index.php/GCCSDK) cross compiler
 make                                   # host: build/host/libmidisynth.a, midi2wav
 make riscos GCCSDK_INSTALL_ENV=~/gccsdk/env ELF2AIF=/path/to/elf2aif
 make install GCCSDK_INSTALL_ENV=~/gccsdk/env   # header + library into the GCCSDK env
-make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/MIDISynth-0.1.0.zip
+make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/MIDISynth-0.2.0.zip
 ```
 
 - `midiplay` is converted to an Absolute (AIF) file with `elf2aif -e`, so it
@@ -100,9 +100,20 @@ make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/MIDISynth-0.1.0.zip
   `midisynth_output_*` and `midiplay`. These are in `System:Modules` on
   current RISC OS 5 releases.
 - CPU: rendering General MIDI in software takes a fair amount of CPU. On a
-  PC it renders about 100 times faster than real time. It hasn't yet been
-  measured on RISC OS hardware. On slower machines, a lower sample rate
-  (22050) roughly halves the work.
+  PC it renders about 170 times faster than real time. It hasn't yet been
+  measured on RISC OS hardware: `*MIDIPlay -t <file>` renders a song
+  without playing it and reports the processor time it takes. On slower
+  machines, a lower sample rate (22050) roughly halves the work.
+
+## Performance
+
+- Released notes are stopped once they have faded below -60 dB, instead of
+  -80 dB. Over the OpenMSX songs this cuts the work by about a fifth, and
+  the output changes by less than -70 dB.
+- At volume 0 the synth is muted and costs almost nothing: notes aren't
+  started, but the song keeps its place and its instrument settings.
+- The RISC OS library is built with `-O3 -ffast-math`. A NEON build was
+  tried; GCC finds almost nothing in the voice loop to vectorise.
 
 ## Programs using it
 

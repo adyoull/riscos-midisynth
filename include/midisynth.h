@@ -39,7 +39,10 @@ void midisynth_pause(midisynth *ms);
 void midisynth_stop(midisynth *ms);          /* stop and rewind; notes released */
 int  midisynth_playing(midisynth *ms);       /* 1 while a song is playing */
 void midisynth_set_loop(midisynth *ms, int loop);
-void midisynth_set_volume(midisynth *ms, float volume);   /* 0.0 - 1.0 */
+/* Volume 0.0 - 1.0. At 0 the synth is muted and costs almost nothing:
+   sounding notes stop, new notes aren't started, but the song keeps its
+   place and follows instrument and controller changes. */
+void midisynth_set_volume(midisynth *ms, float volume);
 
 /* Live MIDI (channels 0-15, channel 9 is drums) */
 void midisynth_note_on(midisynth *ms, int channel, int key, int velocity);

@@ -12,10 +12,13 @@ GCCSDK_INSTALL_ENV ?= $(HOME)/gccsdk/env
 CROSS  ?= $(GCCSDK_INSTALL_ENV)/bin/arm-riscos-gnueabihf-
 ELF2AIF ?= elf2aif
 SOUNDFONT ?= TimGM6mb.sf2
-# Stack probes: RISC OS GCC programs grow the stack a page at a time
-RO_CFLAGS ?= -O2 -fstack-clash-protection
+# Stack probes: RISC OS GCC programs grow the stack a page at a time.
+# -ffast-math lets GCC reorder the float maths (output differs by at most
+# 1 in 32768). A NEON build was tried: GCC finds almost nothing in
+# TinySoundFont's voice loop to vectorise, so there's one library for all.
+RO_CFLAGS ?= -O3 -ffast-math -mtune=cortex-a72 -fstack-clash-protection
 ZIP ?= $(GCCSDK_INSTALL_ENV)/bin/zip
-VERSION = 0.1.0
+VERSION = 0.2.0
 
 CC      ?= cc
 CFLAGS  ?= -O2

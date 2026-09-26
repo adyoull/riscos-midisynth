@@ -23,10 +23,13 @@ Playing a MIDI file
 -------------------
 At the command line (F12, or a Task window):
 
-  *MIDIPlay [-l] [-v volume] <MIDI file> [SoundFont]
+  *MIDIPlay [-l] [-v volume] [-r rate] [-t] <MIDI file> [SoundFont]
 
   -l          loop the song
   -v volume   volume in percent (default 100)
+  -r rate     sample rate (default 44100)
+  -t          don't play: render the song as fast as possible and
+              report how much processor time the music needs
 
 Press Escape to stop.
 

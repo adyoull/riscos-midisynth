@@ -25,6 +25,12 @@
 #define MS_CHANNELS    16
 #define MS_MAX_VOICES  96          /* allocated up front: no malloc while rendering */
 #define MS_BASE_GAIN   0.3f        /* General MIDI SoundFonts are loud */
+/* A released note is stopped once its envelope is below -60 dB, rather
+   than TinySoundFont's -80 dB. Over the OpenMSX songs this saves about a
+   quarter of the work; the difference in the output is 70 dB below the
+   music. Only the envelope is used: it never rises again after release,
+   whereas the channel volume can (songs dip CC7 to 0 and back). */
+#define MS_CULL_LEVEL  0.001f
 
 #ifdef __riscos__
 #define XSharedSoundBuffer_OpenStream         (0x20000 | 0x55FC0)
@@ -266,7 +272,24 @@ midisynth_set_volume(midisynth *ms, float volume)
     pthread_mutex_lock(&ms->lock);
     ms->volume = volume;
     tsf_set_volume(ms->sf, MS_BASE_GAIN * volume);
+    if (volume == 0.0f) {          /* muted: drop every note now, but keep
+                                      the channels' instruments and controllers */
+        struct tsf_voice *v = ms->sf->voices, *end = v + ms->sf->voiceNum;
+        for (; v != end; v++)
+            tsf_voice_kill(v);
+    }
     pthread_mutex_unlock(&ms->lock);
+}
+
+/* Stop released notes that have faded below MS_CULL_LEVEL. Lock held. */
+static void
+ms_cull(midisynth *ms)
+{
+    struct tsf_voice *v = ms->sf->voices, *end = v + ms->sf->voiceNum;
+    for (; v != end; v++)
+        if (v->playingPreset != -1 && v->ampenv.segment == TSF_SEGMENT_RELEASE &&
+            v->ampenv.level < MS_CULL_LEVEL)
+            tsf_voice_kill(v);
 }
 
 /* One MIDI event. Called with the lock held. */
@@ -278,7 +301,11 @@ ms_event(midisynth *ms, int type, int channel, int a, int b)
     switch (type) {
     case TML_NOTE_ON:
         if (b > 0) {
-            tsf_channel_note_on(sf, channel, a & 127, (b & 127) / 127.0f);
+            /* When muted, notes aren't started at all, so nothing is
+               rendered. Controllers etc. are still followed, so the
+               music carries on correctly when the volume comes back. */
+            if (ms->volume > 0.0f)
+                tsf_channel_note_on(sf, channel, a & 127, (b & 127) / 127.0f);
             break;
         }
         /* note on with velocity 0 is a note off */
@@ -326,7 +353,12 @@ midisynth_render(midisynth *ms, int16_t *buffer, int frames, int mix)
                 }
             }
         }
-        tsf_render_short(ms->sf, (short *)buffer, block, mix);
+        if (ms->volume > 0.0f) {
+            tsf_render_short(ms->sf, (short *)buffer, block, mix);
+            ms_cull(ms);
+        } else if (!mix) {
+            memset(buffer, 0, block * 2 * sizeof(int16_t));
+        }
         buffer += block * 2;
         frames -= block;
     }

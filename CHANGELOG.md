@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.2.0 (not yet released)
+
+Faster.
+
+- Released notes stop once they've faded below -60 dB (TinySoundFont
+  waits for -80 dB). About 20% less work over the OpenMSX songs; the
+  output differs by less than -70 dB. Only the note's envelope is used,
+  not the channel volume, which a song can turn down and back up.
+- Volume 0 mutes the synth: sounding notes stop, new notes aren't
+  started, and rendering is skipped. The song keeps its place and its
+  instrument and controller settings, so it carries on when the volume
+  comes back.
+- The RISC OS library is built with `-O3 -ffast-math -mtune=cortex-a72`.
+- `midiplay -t` renders a song without playing it and reports the
+  processor time; `-r` sets the sample rate.
+
 ## 0.1.0 (not yet released)
 
 First version.
