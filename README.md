@@ -32,6 +32,9 @@ handy for testing (`midi2wav`).
 | `app/!MIDISynth` | resource application: holds the SoundFont, sets `MIDISynth$SoundFont`, adds `*MIDIPlay` |
 | `third_party/TinySoundFont` | `tsf.h` / `tml.h`, unmodified |
 | `third_party/stb` | `stb_vorbis.c` (decodes SF3 SoundFonts), unmodified |
+| `tests/` | host tests (`make test`) and the script that makes their files |
+| `tools/` | `mkrozip.py` (zip with RISC OS filetypes), `mksprites.py` (`!Sprites`) |
+| `docs/` | design notes and release steps |
 
 ## Using it
 
@@ -56,8 +59,12 @@ Link with `-lmidisynth -lpthread -lm`.
 
 - RISC OS filenames (`<MyApp$Dir>.Music.theme`, `SDFS::Disc.$.x`) and
   Unix-style names both work.
-- The library is thread-safe. You can control playback from your main
-  thread while another thread renders.
+- You can control playback from your main thread while another thread
+  renders: each synth has its own lock. `midisynth_error()` is shared, so
+  read it straight after the call that failed, and make all the
+  `midisynth_output_*` calls from one thread.
+- `MIDISYNTH_VERSION` (e.g. `"0.3.2"`) and `MIDISYNTH_VERSION_NUM`
+  (`302`) give the version at compile time.
 - Channel 9 (the tenth) is drums, as General MIDI requires.
 
 ### The SoundFont
@@ -99,11 +106,16 @@ You need the [GCCSDK](https://www.riscos.info/index.php/GCCSDK) cross compiler
 make                                   # host: build/host/libmidisynth.a, midi2wav
 make riscos GCCSDK_INSTALL_ENV=~/gccsdk/env ELF2AIF=/path/to/elf2aif
 make install GCCSDK_INSTALL_ENV=~/gccsdk/env   # header + library into the GCCSDK env
-make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/MIDISynth-0.3.1.zip
+make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/MIDISynth-<version>.zip
+make test                              # tests, on the host
 ```
 
 - `midiplay` is converted to an Absolute (AIF) file with `elf2aif -e`, so it
-  doesn't need `!SharedLibs`.
+  doesn't need `!SharedLibs`. Use the `elf2aif` from
+  [riscos-openttd](https://github.com/adyoull/riscos-openttd) `tools/elf2aif`
+  (GCCSDK's, with fixes); see `docs/RELEASING.md`.
+- `make zip` uses `tools/mkrozip.py` (Python 3) to keep the RISC OS
+  filetypes.
 - You can get TimGM6mb from Debian/Ubuntu's `timgm6mb-soundfont` package
   (`/usr/share/sounds/sf2/TimGM6mb.sf2`) or from the MuseScore repository.
 
@@ -149,7 +161,14 @@ make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/MIDISynth-0.3.1.zip
 - [OpenTTD for RISC OS](https://github.com/adyoull/riscos-openttd): the
   `midisynth` music driver plays the OpenMSX soundtrack.
 
+## More
+
+- `docs/DESIGN.md`: how it works, and why things are as they are.
+- `docs/RELEASING.md`: building, testing and making a release.
+- `CHANGELOG.md`: what changed in each version.
+
 ## Licence
 
 MIT, see `LICENSE`. TinySoundFont is by Bernhard Schelling, also MIT.
-SoundFonts have their own licences.
+stb_vorbis is by Sean Barrett, public domain or MIT. SoundFonts have their
+own licences (TimGM6mb: GPL-2).

@@ -17,6 +17,20 @@
 extern "C" {
 #endif
 
+/* The library version. Programs that link midisynth statically can check
+   it at compile time, e.g. #if MIDISYNTH_VERSION_NUM >= 302 */
+#define MIDISYNTH_VERSION_MAJOR 0
+#define MIDISYNTH_VERSION_MINOR 3
+#define MIDISYNTH_VERSION_PATCH 2
+#define MIDISYNTH_VERSION       "0.3.2"
+#define MIDISYNTH_VERSION_NUM   (MIDISYNTH_VERSION_MAJOR * 10000 + \
+                                 MIDISYNTH_VERSION_MINOR * 100 + MIDISYNTH_VERSION_PATCH)
+
+/* Threads: every call on a synth may be made from any thread; each synth
+   has its own lock. The exceptions: midisynth_error() is shared (see
+   below), and the midisynth_output_* calls should all be made from one
+   thread. Functions returning int return 1 on success, 0 on failure. */
+
 typedef struct midisynth midisynth;
 
 /* Create a synthesiser. sf2 is the SoundFont to use; NULL means the one
@@ -26,17 +40,21 @@ typedef struct midisynth midisynth;
 midisynth *midisynth_create(const char *sf2, int sample_rate);
 void midisynth_destroy(midisynth *ms);
 
-/* Why the last call failed, or "" */
+/* Why the last call failed. One buffer shared by all synths and threads,
+   so read it straight after the call that failed. */
 const char *midisynth_error(void);
 
 /* Load a Standard MIDI File (from a file or memory). Any song already
-   playing stops. The new song starts paused; call midisynth_play. */
+   playing stops. The new song starts paused; call midisynth_play.
+   Return 1, or 0 if it isn't a MIDI file (see midisynth_error). The data
+   given to midisynth_load_memory is copied, so it can be freed after. */
 int midisynth_load_file(midisynth *ms, const char *path);
 int midisynth_load_memory(midisynth *ms, const void *data, int size);
 
 void midisynth_play(midisynth *ms);          /* start or resume */
 void midisynth_pause(midisynth *ms);
-void midisynth_stop(midisynth *ms);          /* stop and rewind; notes released */
+void midisynth_stop(midisynth *ms);          /* stop and rewind; sounding notes
+                                                fade out over 10 ms */
 int  midisynth_playing(midisynth *ms);       /* 1 while a song is playing */
 void midisynth_set_loop(midisynth *ms, int loop);
 /* Volume 0.0 - 1.0. At 0 the synth is muted and costs almost nothing:
@@ -65,7 +83,8 @@ void midisynth_render(midisynth *ms, int16_t *buffer, int frames, int mix);
    own sound output. After open, call midisynth_output_poll often (for
    example on every Wimp null event, at least every 50 ms): it renders
    more audio whenever the queue runs low. 'name' is shown as the sound
-   source's name. */
+   source's name. Returns 1, or 0 if SharedSoundBuffer can't be used
+   (see midisynth_error). midisynth_destroy closes the output too. */
 int  midisynth_output_open(midisynth *ms, const char *name);
 void midisynth_output_poll(midisynth *ms);
 void midisynth_output_close(midisynth *ms);

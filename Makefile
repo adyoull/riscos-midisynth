@@ -6,6 +6,9 @@
 #                        GCCSDK environment ($(GCCSDK_INSTALL_ENV))
 #   make app             build !MIDISynth (needs a SoundFont, see README)
 #   make zip             zip !MIDISynth with RISC OS filetypes
+#   make test            host tests (also: test-asan, test-tsan, test-update)
+#
+# How to make a release: docs/RELEASING.md.
 #
 # Cross build settings; override on the command line if yours differ.
 GCCSDK_INSTALL_ENV ?= $(HOME)/gccsdk/env
@@ -17,25 +20,30 @@ SOUNDFONT ?= TimGM6mb.sf2
 # 1 in 32768). A NEON build was tried: GCC finds almost nothing in
 # TinySoundFont's voice loop to vectorise, so there's one library for all.
 RO_CFLAGS ?= -O3 -ffast-math -mtune=cortex-a72 -fstack-clash-protection
-ZIP ?= $(GCCSDK_INSTALL_ENV)/bin/zip
-VERSION = 0.3.1
+PYTHON ?= python3
+# The version comes from include/midisynth.h, so there's one place to change.
+VERSION := $(shell sed -n 's/^\#define MIDISYNTH_VERSION  *"\(.*\)"/\1/p' include/midisynth.h)
 
 CC      ?= cc
 CFLAGS  ?= -O2
 WARN     = -Wall
 INC      = -Iinclude -Ithird_party/TinySoundFont
+# midisynth.c compiles these in, so it must be rebuilt when they change
+LIB_DEPS = src/midisynth.c include/midisynth.h \
+           third_party/TinySoundFont/tsf.h third_party/TinySoundFont/tml.h \
+           third_party/stb/stb_vorbis.c
 
 HOST_DIR = build/host
 RO_DIR   = build/riscos
 
-.PHONY: all host riscos install app zip clean
+.PHONY: all host riscos install app zip test test-asan test-tsan test-update clean
 
 all: host
 
 # ---- host ---------------------------------------------------------------
 host: $(HOST_DIR)/libmidisynth.a $(HOST_DIR)/midi2wav
 
-$(HOST_DIR)/midisynth.o: src/midisynth.c include/midisynth.h
+$(HOST_DIR)/midisynth.o: $(LIB_DEPS)
 	@mkdir -p $(HOST_DIR)
 	$(CC) $(CFLAGS) $(WARN) $(INC) -c $< -o $@
 
@@ -48,7 +56,7 @@ $(HOST_DIR)/midi2wav: examples/midi2wav.c $(HOST_DIR)/libmidisynth.a
 # ---- RISC OS ------------------------------------------------------------
 riscos: $(RO_DIR)/libmidisynth.a $(RO_DIR)/midiplay,ff8
 
-$(RO_DIR)/midisynth.o: src/midisynth.c include/midisynth.h
+$(RO_DIR)/midisynth.o: $(LIB_DEPS)
 	@mkdir -p $(RO_DIR)
 	$(CROSS)gcc $(RO_CFLAGS) $(WARN) $(INC) -c $< -o $@
 
@@ -77,10 +85,41 @@ app: $(RO_DIR)/midiplay,ff8
 	  echo "note: no SoundFont at $(SOUNDFONT); put one in !MIDISynth as SoundFont"; \
 	fi
 
-# GCCSDK's zip; -, stores the RISC OS filetypes from the ,xxx suffixes
+# tools/mkrozip.py stores the RISC OS filetypes from the ,xxx suffixes
 zip: app
 	rm -f build/MIDISynth-$(VERSION).zip
-	cd build && $(ZIP) -, -9 -r MIDISynth-$(VERSION).zip '!MIDISynth'
+	$(PYTHON) tools/mkrozip.py build/MIDISynth-$(VERSION).zip build '!MIDISynth'
+
+# ---- tests (host) -------------------------------------------------------
+TEST_DIR = build/test
+ASAN_FLAGS = -O1 -fsanitize=address,undefined -fno-omit-frame-pointer
+$(TEST_DIR)/files: tests/mktestfiles.py
+	$(PYTHON) tests/mktestfiles.py $@
+	@touch $@
+
+define test_build
+	@mkdir -p $(TEST_DIR)
+	$(CC) -g $(1) $(WARN) $(INC) src/midisynth.c tests/test_midisynth.c -lpthread -lm -o $(2)
+endef
+
+$(TEST_DIR)/test_midisynth: $(LIB_DEPS) tests/test_midisynth.c
+	$(call test_build,$(CFLAGS),$@)
+
+test: $(TEST_DIR)/test_midisynth $(TEST_DIR)/files
+	$(TEST_DIR)/test_midisynth $(TEST_DIR)/files
+
+test-asan: $(TEST_DIR)/files
+	$(call test_build,$(ASAN_FLAGS),$(TEST_DIR)/test_asan)
+	$(TEST_DIR)/test_asan $(TEST_DIR)/files
+
+test-tsan: $(TEST_DIR)/files
+	$(call test_build,-O1 -fsanitize=thread,$(TEST_DIR)/test_tsan)
+	$(TEST_DIR)/test_tsan $(TEST_DIR)/files
+
+# Only after checking that a change in the sound is intended
+test-update: $(TEST_DIR)/test_midisynth $(TEST_DIR)/files
+	$(TEST_DIR)/test_midisynth $(TEST_DIR)/files --update
+
 
 clean:
 	rm -rf build

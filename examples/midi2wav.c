@@ -24,10 +24,11 @@ int main(int argc, char **argv)
     ms = midisynth_create(argv[2], rate);
     if (!ms || !midisynth_load_file(ms, argv[1])) {
         fprintf(stderr, "midi2wav: %s\n", midisynth_error());
+        midisynth_destroy(ms);
         return 1;
     }
     out = fopen(argv[3], "wb");
-    if (!out) { perror(argv[3]); return 1; }
+    if (!out) { perror(argv[3]); midisynth_destroy(ms); return 1; }
     fwrite("RIFF\0\0\0\0WAVEfmt ", 1, 16, out);
     put32(out, 16); put16(out, 1); put16(out, 2); put32(out, rate);
     put32(out, rate * 4); put16(out, 4); put16(out, 16);
@@ -43,8 +44,8 @@ int main(int argc, char **argv)
     }
     fseek(out, 4, SEEK_SET); put32(out, 36 + frames * 4);
     fseek(out, 40, SEEK_SET); put32(out, frames * 4);
-    fclose(out);
     midisynth_destroy(ms);
+    if (ferror(out) | fclose(out)) { perror(argv[3]); return 1; }
     printf("%s: %.1f seconds\n", argv[3], frames / (double)rate);
     return 0;
 }

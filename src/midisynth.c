@@ -46,6 +46,11 @@
 #define MS_CULL_LEVEL  0.001f
 
 #ifdef __riscos__
+/* SharedSoundBuffer 0.07 and StreamManager 0.03, by John Duffell. The
+   documentation in ssb.zip (2004) is out of date in places; where it
+   differs, this follows RDPClient's c/Sound, which is known to work (see
+   docs/DESIGN.md). The X bit (0x20000) makes errors come back instead of
+   being raised. */
 #define XSharedSoundBuffer_OpenStream         (0x20000 | 0x55FC0)
 #define XSharedSoundBuffer_CloseStream        (0x20000 | 0x55FC1)
 #define XSharedSoundBuffer_Volume             (0x20000 | 0x55FC4)
@@ -55,7 +60,16 @@
 #define XStreamManager_AddBlock               (0x20000 | 0x57282)
 #define XStreamManager_SetBuffer              (0x20000 | 0x57287)
 #define XStreamManager_BufferStats            (0x20000 | 0x57288)
+
+#define SSB_OPEN_BLOCKSIZE  (1u << 1)      /* OpenStream R0: R2 holds the usual block size */
+#define SSB_PAUSE_RESUME    (1u << 0)      /* Pause R1: set = play, clear = pause */
+#define SSB_VOLUME_FULL     0xFFFFFFFFu    /* Volume R1: &LLLLRRRR, left and right 0-&FFFF */
+#define SSB_RATE_UNIT       1024           /* SampleRate R1 is in 1/1024 Hz */
+
+#define MS_FRAME_BYTES 4           /* one frame: 16-bit left + 16-bit right */
 #define MS_OUT_FRAMES  1024        /* frames per block given to StreamManager */
+#define MS_QUEUE_MS    100         /* audio to keep queued ahead */
+#define MS_BUFFER_MAX  4           /* StreamManager may hold up to 4 x that */
 #endif
 
 struct midisynth
@@ -69,12 +83,16 @@ struct midisynth
     int playing, loop;
     float volume;
 #ifdef __riscos__
-    int ssb, stream, started;
-    int16_t *outbuf;
-    int target;                    /* bytes to keep queued */
+    int ssb;                       /* SharedSoundBuffer stream handle, 0 = closed */
+    int stream;                    /* the StreamManager stream under it */
+    int started;                   /* playing yet? (starts paused) */
+    int16_t *outbuf;               /* one block, MS_OUT_FRAMES frames */
+    int target;                    /* bytes to keep queued (MS_QUEUE_MS worth) */
 #endif
 };
 
+/* The last error. One buffer for all synths and threads, so read it
+   straight after the call that failed. */
 static char ms_errbuf[320];
 
 /* File names may be given the RISC OS way (from a system variable, say:
@@ -105,6 +123,36 @@ ms_seterror(const char *msg, const char *extra)
 {
     snprintf(ms_errbuf, sizeof(ms_errbuf), "%s%s%s", msg, extra ? ": " : "", extra ? extra : "");
 }
+
+/* ---- TinySoundFont internals -------------------------------------------
+   These two functions use TinySoundFont's private voice data (tsf->voices,
+   voiceNum, playingPreset, ampenv) and its static tsf_voice_kill(), which
+   we can reach only because the implementation is compiled into this
+   file. They are the only places that do. Check them whenever
+   third_party/TinySoundFont is updated: if the names change they stop
+   compiling; if the meaning changes, the tests in tests/ should catch it. */
+
+/* Stop every sounding voice at once, without resetting the channels'
+   instruments and controllers (tsf_reset would). Lock held. */
+static void
+ms_kill_voices(midisynth *ms)
+{
+    struct tsf_voice *v = ms->sf->voices, *end = v + ms->sf->voiceNum;
+    for (; v != end; v++)
+        tsf_voice_kill(v);
+}
+
+/* Stop released notes that have faded below MS_CULL_LEVEL. Lock held. */
+static void
+ms_cull(midisynth *ms)
+{
+    struct tsf_voice *v = ms->sf->voices, *end = v + ms->sf->voiceNum;
+    for (; v != end; v++)
+        if (v->playingPreset != -1 && v->ampenv.segment == TSF_SEGMENT_RELEASE &&
+            v->ampenv.level < MS_CULL_LEVEL)
+            tsf_voice_kill(v);
+}
+/* ---- end of TinySoundFont internals ------------------------------------ */
 
 /* Channel set-up: every channel exists (so rendering never allocates), 9 is
    the General MIDI drum kit. */
@@ -285,24 +333,9 @@ midisynth_set_volume(midisynth *ms, float volume)
     pthread_mutex_lock(&ms->lock);
     ms->volume = volume;
     tsf_set_volume(ms->sf, MS_BASE_GAIN * volume);
-    if (volume == 0.0f) {          /* muted: drop every note now, but keep
-                                      the channels' instruments and controllers */
-        struct tsf_voice *v = ms->sf->voices, *end = v + ms->sf->voiceNum;
-        for (; v != end; v++)
-            tsf_voice_kill(v);
-    }
+    if (volume == 0.0f)            /* muted: drop every note now */
+        ms_kill_voices(ms);
     pthread_mutex_unlock(&ms->lock);
-}
-
-/* Stop released notes that have faded below MS_CULL_LEVEL. Lock held. */
-static void
-ms_cull(midisynth *ms)
-{
-    struct tsf_voice *v = ms->sf->voices, *end = v + ms->sf->voiceNum;
-    for (; v != end; v++)
-        if (v->playingPreset != -1 && v->ampenv.segment == TSF_SEGMENT_RELEASE &&
-            v->ampenv.level < MS_CULL_LEVEL)
-            tsf_voice_kill(v);
 }
 
 /* One MIDI event. Called with the lock held. */
@@ -441,6 +474,9 @@ midisynth_send(midisynth *ms, int status, int data1, int data2)
 #ifdef __riscos__
 /* ---- Output through SharedSoundBuffer --------------------------------- */
 
+/* Bytes queued but not yet played, or -1 on error. BufferStats returns
+   R0 = bytes added so far, R1 = bytes played (the 2004 documentation says
+   R0 = unplayed bytes; RDPClient uses R0 - R1). */
 static int
 ms_queued(midisynth *ms)
 {
@@ -451,12 +487,21 @@ ms_queued(midisynth *ms)
     return r.r[0] - r.r[1];
 }
 
+static void
+ms_ssb_pause(midisynth *ms, int play)
+{
+    _kernel_swi_regs r;
+    r.r[0] = ms->ssb;
+    r.r[1] = play ? SSB_PAUSE_RESUME : 0;
+    _kernel_swi(XSharedSoundBuffer_Pause, &r, &r);
+}
+
 int
 midisynth_output_open(midisynth *ms, const char *name)
 {
     _kernel_swi_regs r;
     _kernel_oserror *e;
-    const int block = MS_OUT_FRAMES * 4;
+    const int block = MS_OUT_FRAMES * MS_FRAME_BYTES;
 
     if (ms->ssb)
         return 1;
@@ -465,7 +510,7 @@ midisynth_output_open(midisynth *ms, const char *name)
         ms_seterror("Out of memory", NULL);
         return 0;
     }
-    r.r[0] = 2;
+    r.r[0] = SSB_OPEN_BLOCKSIZE;
     r.r[1] = (int)(name && *name ? name : "MIDISynth");
     r.r[2] = block;
     if ((e = _kernel_swi(XSharedSoundBuffer_OpenStream, &r, &r)) != NULL) {
@@ -482,23 +527,24 @@ midisynth_output_open(midisynth *ms, const char *name)
         return 0;
     }
     ms->stream = r.r[0];
-    /* Keep about 100 ms queued: plenty for a Wimp program that is only
-       polled now and then. */
-    ms->target = ms->rate * 4 / 10;
+    /* Keep about MS_QUEUE_MS queued (at least two blocks): plenty for a
+       Wimp program that is only polled now and then. StreamManager may
+       hold a few times that, so a burst of polls can't overfill it. */
+    ms->target = ms->rate * MS_FRAME_BYTES * MS_QUEUE_MS / 1000;
     if (ms->target < block * 2)
         ms->target = block * 2;
+    /* The next three calls only fail if the stream is broken, which
+       AddBlock will then report; so their errors aren't checked. */
     r.r[0] = ms->stream;
-    r.r[1] = ms->target * 4;
+    r.r[1] = ms->target * MS_BUFFER_MAX;
     _kernel_swi(XStreamManager_SetBuffer, &r, &r);
     r.r[0] = ms->ssb;
-    r.r[1] = ms->rate * 1024;
+    r.r[1] = ms->rate * SSB_RATE_UNIT;
     _kernel_swi(XSharedSoundBuffer_SampleRate, &r, &r);
     r.r[0] = ms->ssb;
-    r.r[1] = (int)0xFFFFFFFF;
+    r.r[1] = (int)SSB_VOLUME_FULL;     /* our own volume is applied while rendering */
     _kernel_swi(XSharedSoundBuffer_Volume, &r, &r);
-    r.r[0] = ms->ssb;
-    r.r[1] = 0;                        /* paused until some data is queued */
-    _kernel_swi(XSharedSoundBuffer_Pause, &r, &r);
+    ms_ssb_pause(ms, 0);               /* paused until two blocks are queued */
     ms->started = 0;
     return 1;
 }
@@ -511,21 +557,19 @@ midisynth_output_poll(midisynth *ms)
 
     if (!ms->ssb)
         return;
-    for (n = 0; n < 16; n++) {
+    for (n = 0; n < 16; n++) {         /* at most 16 blocks per call */
         queued = ms_queued(ms);
         if (queued < 0 || queued >= ms->target)
             break;
         midisynth_render(ms, ms->outbuf, MS_OUT_FRAMES, 0);
         r.r[0] = ms->stream;
         r.r[1] = (int)ms->outbuf;
-        r.r[2] = MS_OUT_FRAMES * 4;
-        if (_kernel_swi(XStreamManager_AddBlock, &r, &r) != NULL)
+        r.r[2] = MS_OUT_FRAMES * MS_FRAME_BYTES;
+        if (_kernel_swi(XStreamManager_AddBlock, &r, &r) != NULL)   /* copies the data */
             break;
     }
-    if (!ms->started && ms_queued(ms) >= MS_OUT_FRAMES * 4 * 2) {
-        r.r[0] = ms->ssb;
-        r.r[1] = 1;
-        _kernel_swi(XSharedSoundBuffer_Pause, &r, &r);
+    if (!ms->started && ms_queued(ms) >= MS_OUT_FRAMES * MS_FRAME_BYTES * 2) {
+        ms_ssb_pause(ms, 1);
         ms->started = 1;
     }
 }
