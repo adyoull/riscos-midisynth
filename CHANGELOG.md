@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 (not yet released)
+
+- SF3 SoundFonts (SoundFont 2 with Ogg Vorbis compressed samples, as used
+  by MuseScore) now load. They're decoded with stb_vorbis (v1.22, public
+  domain / MIT) when the SoundFont loads. Before this, an .sf3 loaded
+  without an error but played noise.
+- SF2 output is unchanged. Loading an .sf2 briefly needs a few MB more
+  memory.
+
 ## 0.2.0 (not yet released)
 
 Faster.

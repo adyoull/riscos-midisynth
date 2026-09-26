@@ -3,11 +3,24 @@
  * Copyright (c) 2026 Andrew Youll. MIT licence, see LICENSE.
  *
  * TinySoundFont (tsf.h, tml.h) by Bernhard Schelling, MIT licence.
+ * stb_vorbis by Sean Barrett, public domain / MIT licence.
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+
+/* stb_vorbis decodes the Ogg Vorbis samples in SF3 SoundFonts.
+   TinySoundFont uses it when it has been included first. Only decoding
+   from memory is needed. */
+#define STB_VORBIS_NO_STDIO
+#define STB_VORBIS_NO_PUSHDATA_API
+#define STB_VORBIS_NO_INTEGER_CONVERSION
+#define STB_VORBIS_MAX_CHANNELS 2
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"   /* known false alarms */
+#include "../third_party/stb/stb_vorbis.c"
+#pragma GCC diagnostic pop
 
 #define TSF_IMPLEMENTATION
 #include "../third_party/TinySoundFont/tsf.h"

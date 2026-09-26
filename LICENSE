@@ -22,3 +22,5 @@ SOFTWARE.
 
 The files in third_party/TinySoundFont are by Bernhard Schelling and are
 under their own MIT licence (third_party/TinySoundFont/LICENSE).
+third_party/stb/stb_vorbis.c is by Sean Barrett, public domain or MIT
+licence, your choice (third_party/stb/LICENSE).

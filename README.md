@@ -31,6 +31,7 @@ handy for testing (`midi2wav`).
 | `examples/midi2wav.c` | render a MIDI file to a WAV file (any system) |
 | `app/!MIDISynth` | resource application: holds the SoundFont, sets `MIDISynth$SoundFont`, adds `*MIDIPlay` |
 | `third_party/TinySoundFont` | `tsf.h` / `tml.h`, unmodified |
+| `third_party/stb` | `stb_vorbis.c` (decodes SF3 SoundFonts), unmodified |
 
 ## Using it
 
@@ -76,6 +77,19 @@ The `!MIDISynth` release zip includes **TimGM6mb** (6 MB, GPL-2; see
 size. Any General MIDI `.sf2` works. Larger ones (such as FluidR3_GM, 140 MB)
 sound better but take a long time to load and use a lot of memory.
 
+### File formats
+
+- **Music:** Standard MIDI Files (`.mid`, filetype &FD4), formats 0, 1 and
+  2. Not supported: SMPTE-timed files and RIFF `.rmi` files. SysEx and
+  aftertouch are ignored.
+- **SoundFonts:** SoundFont 2 (`.sf2`) and SF3 (`.sf3`, SoundFont 2 with
+  Ogg Vorbis compressed samples, as used by MuseScore). SF3 files are small
+  to download, but every sample is decoded when the SoundFont loads, and
+  all SoundFonts are held in memory as 32-bit floats. For example,
+  FluidR3Mono_GM.sf3 is a 24 MB file but needs about 285 MB of memory
+  (nearer 400 MB while loading), and takes a while to decode. TimGM6mb
+  needs 11 MB.
+
 ## Building
 
 You need the [GCCSDK](https://www.riscos.info/index.php/GCCSDK) cross compiler
@@ -85,7 +99,7 @@ You need the [GCCSDK](https://www.riscos.info/index.php/GCCSDK) cross compiler
 make                                   # host: build/host/libmidisynth.a, midi2wav
 make riscos GCCSDK_INSTALL_ENV=~/gccsdk/env ELF2AIF=/path/to/elf2aif
 make install GCCSDK_INSTALL_ENV=~/gccsdk/env   # header + library into the GCCSDK env
-make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/MIDISynth-0.2.0.zip
+make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/MIDISynth-0.3.0.zip
 ```
 
 - `midiplay` is converted to an Absolute (AIF) file with `elf2aif -e`, so it
@@ -106,6 +120,9 @@ make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/MIDISynth-0.2.0.zip
   machines, a lower sample rate (22050) roughly halves the work.
 
 ## Performance
+
+- SF3 decoding costs time only while the SoundFont loads; playing is the
+  same speed as with an `.sf2`.
 
 - Released notes are stopped once they have faded below -60 dB, instead of
   -80 dB. Over the OpenMSX songs this cuts the work by about a fifth, and
