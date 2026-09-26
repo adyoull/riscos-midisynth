@@ -18,7 +18,7 @@ SOUNDFONT ?= TimGM6mb.sf2
 # TinySoundFont's voice loop to vectorise, so there's one library for all.
 RO_CFLAGS ?= -O3 -ffast-math -mtune=cortex-a72 -fstack-clash-protection
 ZIP ?= $(GCCSDK_INSTALL_ENV)/bin/zip
-VERSION = 0.3.0
+VERSION = 0.3.1
 
 CC      ?= cc
 CFLAGS  ?= -O2

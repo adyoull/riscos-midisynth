@@ -1,0 +1,9 @@
+| !MIDISynth: load the sound modules that *MIDIPlay needs.
+| SharedSoundBuffer and StreamManager are by John Duffell and are not
+| included with !MIDISynth. See !Help for where to get them.
+RMEnsure SharedSound 1.07 IfThere System:Modules.SSound Then RMLoad System:Modules.SSound
+RMEnsure SharedSound 1.07 Error 0 MIDISynth needs SharedSound 1.07 or later. See !MIDISynth.!Help.
+RMEnsure StreamManager 0.03 IfThere System:Modules.StreamMan Then RMLoad System:Modules.StreamMan
+RMEnsure StreamManager 0.03 Error 0 MIDISynth needs StreamManager 0.03 or later. See !MIDISynth.!Help.
+RMEnsure SharedSoundBuffer 0.07 IfThere System:Modules.SSBuffer Then RMLoad System:Modules.SSBuffer
+RMEnsure SharedSoundBuffer 0.07 Error 0 MIDISynth needs SharedSoundBuffer 0.07 or later. See !MIDISynth.!Help.

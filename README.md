@@ -99,7 +99,7 @@ You need the [GCCSDK](https://www.riscos.info/index.php/GCCSDK) cross compiler
 make                                   # host: build/host/libmidisynth.a, midi2wav
 make riscos GCCSDK_INSTALL_ENV=~/gccsdk/env ELF2AIF=/path/to/elf2aif
 make install GCCSDK_INSTALL_ENV=~/gccsdk/env   # header + library into the GCCSDK env
-make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/MIDISynth-0.3.0.zip
+make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/MIDISynth-0.3.1.zip
 ```
 
 - `midiplay` is converted to an Absolute (AIF) file with `elf2aif -e`, so it
@@ -112,7 +112,15 @@ make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/MIDISynth-0.3.0.zip
 - RISC OS 5.
 - The SharedSound, StreamManager and SharedSoundBuffer modules, for
   `midisynth_output_*` and `midiplay`. These are in `System:Modules` on
-  current RISC OS 5 releases.
+  current RISC OS 5 releases. `!MIDISynth` loads them when `*MIDIPlay`
+  runs (its `LoadSound` file), and reports a clear error if one is
+  missing.
+  - StreamManager and SharedSoundBuffer are © John Duffell 2004. Their
+    archive (`ssb.zip`, from the !RDPClient page at
+    <https://orac.co.uk/software/rdpclient/>) gives no licence to pass
+    them on, so they are **not** included in the `!MIDISynth` zip.
+  - Programs that use `midisynth_output_*` should load the modules
+    themselves first, for example with the same `RMEnsure` lines.
 - CPU: rendering General MIDI in software takes a fair amount of CPU. On a
   PC it renders about 170 times faster than real time. It hasn't yet been
   measured on RISC OS hardware: `*MIDIPlay -t <file>` renders a song

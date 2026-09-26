@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.1 (not yet released)
+
+- `!MIDISynth` checks for the sound modules `*MIDIPlay` needs
+  (SharedSound 1.07, StreamManager 0.03, SharedSoundBuffer 0.07). It
+  loads them from `System:Modules` if they're there, and otherwise gives
+  an error that points to `!Help`. The check runs when `*MIDIPlay` is
+  used and when `!MIDISynth` is double-clicked, not at boot.
+- `!Help` and the README say where to get StreamManager and
+  SharedSoundBuffer. They are not included, because nothing in their
+  archive gives permission to pass them on.
+- No changes to the library or `midiplay`.
+
 ## 0.3.0 (not yet released)
 
 - SF3 SoundFonts (SoundFont 2 with Ogg Vorbis compressed samples, as used

@@ -38,8 +38,28 @@ At the command line (F12, or a Task window):
 
 Press Escape to stop.
 
-Needs RISC OS 5 with the SharedSound, StreamManager and
-SharedSoundBuffer modules (as supplied with current RISC OS 5 releases).
+
+Sound modules
+-------------
+*MIDIPlay needs these modules:
+
+  SharedSound         1.07 or later
+  StreamManager       0.03 or later
+  SharedSoundBuffer   0.07 or later
+
+Current RISC OS 5 releases have them in System:Modules, and !MIDISynth
+loads them from there when they're needed. Double-clicking !MIDISynth
+checks for them, and gives an error if one is missing.
+
+StreamManager and SharedSoundBuffer are by John Duffell. They are not
+included with !MIDISynth, because nothing in their archive gives
+permission to pass them on. If you don't have them, download ssb.zip
+from the !RDPClient page on Alan Sellors' website:
+
+  https://orac.co.uk/software/rdpclient/
+
+then merge its !System into yours: open !Boot, click System, and drag
+the !System from ssb.zip into the System merge window.
 
 Licences
 --------

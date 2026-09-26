@@ -1,0 +1,3 @@
+| *MIDIPlay: load the sound modules, then run the player.
+Obey <MIDISynth$Dir>.LoadSound
+Run <MIDISynth$Dir>.midiplay %*0
