@@ -1,4 +1,5 @@
-/* midiplay: play a MIDI file through SharedSoundBuffer (RISC OS).
+/* midiplay: play a MIDI file (RISC OS), through SharedSoundBuffer or, if
+   that isn't available, DigitalRenderer.
    midiplay [-l] [-v volume%] [-r rate] [-t] <song.mid> [soundfont.sf2]
    Without a SoundFont argument it uses MIDISynth$SoundFont.
    Press Escape to stop.
@@ -71,17 +72,19 @@ int main(int argc, char **argv)
     ms = midisynth_create(sf2, rate);
     if (ms && timing) {
         if (!midisynth_load_file(ms, song)) {
-            fprintf(stderr, "midiplay: %s\n", midisynth_error());
+            fprintf(stderr, "midiplay: %s\n", midisynth_last_error(ms));
             midisynth_destroy(ms);
             return 1;
         }
         return benchmark(ms, rate);
     }
     if (!ms || !midisynth_load_file(ms, song) || !midisynth_output_open(ms, "midiplay")) {
-        fprintf(stderr, "midiplay: %s\n", midisynth_error());
+        fprintf(stderr, "midiplay: %s\n", midisynth_last_error(ms));
         midisynth_destroy(ms);
         return 1;
     }
+    if (strcmp(midisynth_output_name(ms), "SharedSoundBuffer") != 0)
+        printf("midiplay: playing through %s\n", midisynth_output_name(ms));
     midisynth_set_loop(ms, loop);
     midisynth_set_volume(ms, vol / 100.0f);
     midisynth_play(ms);

@@ -19,7 +19,7 @@
 
 ```sh
 make                 # host library and midi2wav
-make test            # tests (a few seconds)
+make test            # tests of the synth and of the sound output (a few seconds)
 make test-asan       # the same, checking memory use
 make test-tsan       # the same, checking threads
 ```
@@ -50,7 +50,9 @@ make test-tsan       # the same, checking threads
    - Don't add files to an existing zip with GCCSDK's `zip -,`: it
      duplicates entries. Make a new one.
 5. Try it on RISC OS: double-click `!MIDISynth` (icon, no error), then
-   `*MIDIPlay -l song.mid` (plays, loops, Escape stops it).
+   `*MIDIPlay -l song.mid` (plays, loops, Escape stops it). Then
+   `*Set MIDISynth$Output DigitalRenderer` and play again (it should say
+   "playing through DigitalRenderer"), and `*Unset MIDISynth$Output`.
 6. Commit, tag and push:
    ```sh
    git tag v<version>

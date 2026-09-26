@@ -1,0 +1,25 @@
+# Editor settings for riscos-midisynth (see CONTRIBUTING.md)
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+charset = utf-8
+
+[*.{c,h,py}]
+indent_style = space
+indent_size = 4
+
+[Makefile]
+indent_style = tab
+
+# RISC OS files (!Help, Obey files) are plain ASCII text
+[app/**]
+charset = latin1
+
+# Third-party code keeps its own style
+[third_party/**]
+indent_style = unset
+indent_size = unset
+trim_trailing_whitespace = false

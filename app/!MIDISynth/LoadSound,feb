@@ -1,9 +1,17 @@
 | !MIDISynth: load the sound modules that *MIDIPlay needs.
+| It plays through SharedSoundBuffer (needs SharedSound and StreamManager
+| too) or, if that can't be loaded, through DigitalRenderer.
 | SharedSoundBuffer and StreamManager are by John Duffell and are not
 | included with !MIDISynth. See !Help for where to get them.
 RMEnsure SharedSound 1.07 IfThere System:Modules.SSound Then RMLoad System:Modules.SSound
-RMEnsure SharedSound 1.07 Error 0 MIDISynth needs SharedSound 1.07 or later. See !MIDISynth.!Help.
 RMEnsure StreamManager 0.03 IfThere System:Modules.StreamMan Then RMLoad System:Modules.StreamMan
-RMEnsure StreamManager 0.03 Error 0 MIDISynth needs StreamManager 0.03 or later. See !MIDISynth.!Help.
-RMEnsure SharedSoundBuffer 0.07 IfThere System:Modules.SSBuffer Then RMLoad System:Modules.SSBuffer
-RMEnsure SharedSoundBuffer 0.07 Error 0 MIDISynth needs SharedSoundBuffer 0.07 or later. See !MIDISynth.!Help.
+| Load SharedSoundBuffer only if the two modules it needs are there.
+Set MIDISynth$SSB 1
+RMEnsure SharedSound 1.07 Set MIDISynth$SSB 0
+RMEnsure StreamManager 0.03 Set MIDISynth$SSB 0
+If "<MIDISynth$SSB>" = "1" Then RMEnsure SharedSoundBuffer 0.07 IfThere System:Modules.SSBuffer Then RMLoad System:Modules.SSBuffer
+Unset MIDISynth$SSB
+| No SharedSoundBuffer (or MIDISynth$Output asks for it): DigitalRenderer.
+If "<MIDISynth$Output>" = "DigitalRenderer" Then RMEnsure DigitalRenderer 0.55 IfThere System:Modules.DRenderer Then RMLoad System:Modules.DRenderer
+RMEnsure SharedSoundBuffer 0.07 RMEnsure DigitalRenderer 0.55 IfThere System:Modules.DRenderer Then RMLoad System:Modules.DRenderer
+RMEnsure SharedSoundBuffer 0.07 RMEnsure DigitalRenderer 0.55 Error 0 MIDISynth needs SharedSoundBuffer 0.07 (or DigitalRenderer 0.55). See !MIDISynth.!Help.

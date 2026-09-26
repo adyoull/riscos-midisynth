@@ -67,7 +67,7 @@ static void test_create_errors(void)
     char p[600];
     midisynth *ms = midisynth_create(path(p, "no-such.sf2"), RATE);
     CHECK(ms == NULL, "a missing SoundFont was accepted");
-    CHECK(strstr(midisynth_error(), "Couldn't load") != NULL, "error was \"%s\"", midisynth_error());
+    CHECK(strstr(midisynth_last_error(NULL), "Couldn't load") != NULL, "error was \"%s\"", midisynth_last_error(NULL));
     ms = midisynth_create(path(p, "song.mid"), RATE);
     CHECK(ms == NULL, "a MIDI file was accepted as a SoundFont");
     ms = midisynth_create(sf2, 1000);
@@ -82,7 +82,7 @@ static void test_bad_songs(midisynth *ms)
     unsigned i;
     for (i = 0; i < sizeof bad / sizeof bad[0]; i++) {
         CHECK(midisynth_load_file(ms, path(p, bad[i])) == 0, "%s was accepted", bad[i]);
-        CHECK(strstr(midisynth_error(), "Not a MIDI file") != NULL, "%s: error was \"%s\"", bad[i], midisynth_error());
+        CHECK(strstr(midisynth_last_error(ms), "Not a MIDI file") != NULL, "%s: error was \"%s\"", bad[i], midisynth_last_error(ms));
     }
     CHECK(midisynth_load_memory(ms, "MThd", 4) == 0, "4 bytes of memory were accepted");
 }
@@ -285,6 +285,66 @@ static void test_live(midisynth *ms, int16_t *a)
     midisynth_stop(ms);
 }
 
+/* midisynth_create_ex and its settings */
+static void test_config(int16_t *a, int16_t *b)
+{
+    midisynth_config c;
+    midisynth *ms;
+    int i, same = 1;
+
+    midisynth_config_init(&c);
+    CHECK(c.soundfont == NULL && c.sample_rate == 44100 && c.max_voices == 96,
+          "defaults: %p %d %d", (const void *)c.soundfont, c.sample_rate, c.max_voices);
+    c.soundfont = sf2;
+    c.max_voices = 0;
+    CHECK(midisynth_create_ex(&c) == NULL, "0 voices accepted");
+    CHECK(strstr(midisynth_last_error(NULL), "voices") != NULL, "error \"%s\"", midisynth_last_error(NULL));
+    c.max_voices = 257;
+    CHECK(midisynth_create_ex(&c) == NULL, "257 voices accepted");
+
+    /* With one voice, a second note (the first still held) isn't played */
+    c.max_voices = 1;
+    ms = midisynth_create_ex(&c);
+    CHECK(ms != NULL, "1 voice: %s", midisynth_last_error(NULL));
+    if (!ms) return;
+    midisynth_note_on(ms, 0, 60, 100);
+    midisynth_render(ms, a, BLOCK, 0);
+    midisynth_note_on(ms, 0, 72, 100);
+    midisynth_render(ms, a + BLOCK * 2, BLOCK, 0);
+    midisynth_destroy(ms);
+    ms = midisynth_create(sf2, RATE);
+    midisynth_note_on(ms, 0, 60, 100);
+    midisynth_render(ms, b, BLOCK * 2, 0);
+    for (i = 0; i < BLOCK * 4; i++)
+        if (a[i] != b[i]) same = 0;
+    CHECK(same, "with max_voices 1, a second note still sounded");
+    midisynth_destroy(ms);
+}
+
+/* Errors are kept per synth; midisynth_error() still reports the latest. */
+static void test_errors(void)
+{
+    char p[600];
+    midisynth *one = midisynth_create(sf2, RATE), *two = midisynth_create(sf2, RATE);
+    CHECK(one && two, "create: %s", midisynth_last_error(NULL));
+    if (!one || !two) return;
+    CHECK(midisynth_last_error(one)[0] == 0, "new synth has an error: %s", midisynth_last_error(one));
+    midisynth_load_file(one, path(p, "bad-random.mid"));
+    CHECK(strstr(midisynth_last_error(one), "bad-random") != NULL, "one: \"%s\"", midisynth_last_error(one));
+    CHECK(midisynth_last_error(two)[0] == 0, "one's error shows on two: \"%s\"", midisynth_last_error(two));
+    CHECK(strstr(midisynth_error(), "bad-random") != NULL, "midisynth_error: \"%s\"", midisynth_error());
+    CHECK(midisynth_load_file(one, song), "good song refused");
+    CHECK(strstr(midisynth_last_error(one), "bad-random") != NULL, "error cleared by a success");
+    /* no sound output on the host */
+    CHECK(midisynth_output_open(two, "x") == 0, "output opened on the host");
+    CHECK(strstr(midisynth_last_error(two), "not supported") != NULL, "two: \"%s\"", midisynth_last_error(two));
+    CHECK(midisynth_output_name(two) == NULL, "output name on the host");
+    midisynth_output_poll(two);
+    midisynth_output_close(two);
+    midisynth_destroy(one);
+    midisynth_destroy(two);
+}
+
 /* One thread renders while another controls: run with make test-tsan. */
 static midisynth *thread_ms;
 static int thread_done;
@@ -360,6 +420,8 @@ int main(int argc, char **argv)
         test_load_memory(ms, a);
         test_live(ms, a);
         test_threads(ms);
+        test_config(a, b);
+        test_errors();
     }
     midisynth_destroy(ms);
     free(a);

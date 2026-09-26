@@ -5,16 +5,36 @@ this is about the decisions behind it and the numbers that set them.
 
 ## Overview
 
-- `src/midisynth.c` is the whole library. It compiles TinySoundFont
-  (`tsf.h`, the synthesiser; `tml.h`, the MIDI file reader) and
-  stb_vorbis into itself, so users link one static library.
+- `src/midisynth.c` is the synth. It compiles TinySoundFont (`tsf.h`, the
+  synthesiser; `tml.h`, the MIDI file reader) and stb_vorbis into itself,
+  so users link one static library. It is portable C.
+- `src/output.c` and one file per backend (`output_ssb.c`,
+  `output_dr.c`) play the sound on RISC OS (see "Sound output" below).
+  They reach RISC OS only through `_kernel_swi`, so on a PC the tests
+  build them against fake SWIs.
+- `src/midisynth_internal.h` has the synth's structure and what the files
+  share; `include/midisynth.h` is all that users see.
 - The third-party files are **unmodified**. Their commits are in each
   `third_party/*/VERSION`. Change behaviour in `midisynth.c`, not in them.
 - One `struct midisynth` holds a TinySoundFont instance, the song (a
-  linked list of `tml_message`s), the play position in milliseconds, and
-  on RISC OS the SharedSoundBuffer stream.
+  linked list of `tml_message`s), the play position in milliseconds, the
+  sound output if one is open, and the last error.
 - Every public function takes the synth's pthread mutex, so one thread can
   render while another controls playback.
+
+## API conventions
+
+- Functions that can fail return 1/0 (or a pointer/NULL) and record why
+  with `ms_error`, readable with `midisynth_last_error(ms)`. Each synth
+  keeps its own message, so threads and synths don't overwrite each
+  other's. `midisynth_error()` (one shared message) is kept for older
+  programs.
+- New settings go in `midisynth_config` with a default set by
+  `midisynth_config_init`, which callers must use first. Programs link
+  statically and are rebuilt with the header, so a longer struct is safe;
+  new parameters on existing functions would not be.
+- `midisynth_output_*` exist on every system, so portable programs need no
+  `#ifdef`s; outside RISC OS `midisynth_output_open` returns 0.
 
 ## Rendering
 
@@ -23,8 +43,8 @@ this is about the decisions behind it and the numbers that set them.
   events that are due, so events are at most 64 frames (1.5 ms) late.
 - At the end of a song it either rewinds (loop) or stops; notes that are
   still sounding ring out.
-- All 96 voices (`MS_MAX_VOICES`) and all 16 channels are created up
-  front, so rendering never allocates memory. When all are in use, a new
+- All voices (96 by default, `max_voices` in `midisynth_config`) and all
+  16 channels are created up front, so rendering never allocates memory. When all are in use, a new
   note takes the voice furthest into its release; if none is releasing,
   the new note isn't played.
 - Channel 9 (MIDI channel 10) is the General MIDI drum kit: bank 128,
@@ -39,7 +59,7 @@ All measured on an x86 PC with TimGM6mb and the 31 OpenMSX songs
 |---|---|---|
 | `MS_BASE_GAIN` | 0.3 | At 0.6, TimGM6mb clipped up to 43,000 samples in a song. At 0.3, 19 samples clip over all 31 songs. |
 | `MS_CULL_LEVEL` | 0.001 (-60 dB) | See below. |
-| `MS_MAX_VOICES` | 96 | On average 28 voices sound; the busiest songs reach 96. |
+| `MS_DEFAULT_VOICES` | 96 | On average 28 voices sound; the busiest songs reach 96. |
 | SharedSoundBuffer queue | ~100 ms | Enough for a Wimp program that is polled every few tens of ms. Less means lower latency but more risk of gaps. |
 | Output block | 1024 frames | StreamManager handles blocks of one size best. |
 
@@ -91,9 +111,10 @@ marked section. After updating TinySoundFont, check them and run
 - **Build flags.** `-O3 -ffast-math -mtune=cortex-a72` made no measurable
   difference on a PC (0-5%); `-ffast-math` changes samples by at most 1.
   They are kept for the Pi, where they are more likely to help.
-- **A SharedSound handler or DigitalRenderer instead of SharedSoundBuffer.**
+- **A SharedSound handler, or DigitalRenderer, as the main output.**
   Synthesis is the cost, not the output path, and rendering in the sound
-  interrupt brings problems with paging and the VFP. Not worth it.
+  interrupt brings problems with paging and the VFP. SharedSoundBuffer
+  stays first; DigitalRenderer is only the fallback (0.4.0).
 
 ## Ideas not done yet
 
@@ -104,11 +125,31 @@ marked section. After updating TinySoundFont, check them and run
   decoded completely, e.g. 24 MB becomes 285 MB). This means changing
   TinySoundFont's voice renderer, which would probably also be the
   biggest speed-up on a Pi. Measure on the Pi first (`*MIDIPlay -t`).
+- More settings in `midisynth_config` (a gain, the queue length).
 - A RISC OS module (SWIs `MIDISynth_Open/Write/Reset/Close`) so UnixLib's
   `/dev/midi`, BASIC and other programs can share one synth. The
   interface UnixLib expects is in riscos-unixlib `docs/MIDISYNTH-MODULE.md`.
 
-## RISC OS output: SharedSoundBuffer and StreamManager
+## Sound output (RISC OS)
+
+`midisynth_output_open` (`output.c`) tries each backend in turn and keeps
+the first that opens; the reasons the others failed go in the error
+message ("SharedSoundBuffer: SWI not known; DigitalRenderer: in use by
+another program"). `MIDISynth$Output` names the only one to try. A backend
+is three functions (`open`, `poll`, `close`, see `src/output.h`); each
+keeps about 100 ms queued and renders more on every poll.
+
+1. **SharedSoundBuffer** (`output_ssb.c`): mixes with other programs'
+   sound through SharedSound, so it's the first choice.
+2. **DigitalRenderer** (`output_dr.c`): the fallback, for systems without
+   SharedSoundBuffer. It has one user at a time, so midisynth only uses
+   it if nobody else is (UnixLib's `/dev/dsp` takes it over; we don't).
+   The SWIs are called directly, not through `/dev/dsp`, which busy-waits.
+   DigitalRenderer may play at a rate other than the one asked for; the
+   synth then switches to that rate (`ms_set_rate`) before any sound is
+   made.
+
+### SharedSoundBuffer and StreamManager
 
 The modules are by John Duffell (2004), in `System:Modules` on current
 RISC OS 5. Their documentation (in `ssb.zip`) is out of date in places.
@@ -133,6 +174,37 @@ Where it differs, this code follows RDPClient's `c/Sound`, which works.
 - StreamManager and SharedSoundBuffer may not be redistributed on web
   sites (John Duffell's terms), so the release zip doesn't include them;
   `!MIDISynth.LoadSound` loads them from `System:Modules`.
+
+### DigitalRenderer
+
+By Andreas Dehmel. SWI chunk &4F700; numbers and usage follow GCCSDK's
+`DRender.h` and UnixLib's `sound/dsp.c`.
+
+| SWI | Offset | Use here |
+|---|---|---|
+| `Deactivate` | 1 | on close |
+| `ReadState` | 5 | bit 0 set = in use (by someone else: don't open) |
+| `NumBuffers` | 9 | R0 = buffers to queue (100 ms of 512 frames: 9 at 44.1 kHz); 0 on close |
+| `Stream16BitSamples` | 11 | R0 = data, R1 = samples (left and right count separately) |
+| `StreamStatistics` | 12 | returns the buffers waiting |
+| `StreamFlags` | 13 | R0 = EOR, R1 = AND: set bit 0, silence when we fall behind |
+| `Activate16` | 15 | R0 = 2 channels, R1 = 512 frames per buffer, R2 = rate, R3 = 1 (restore the old handler after) |
+| `GetFrequency` | 16 | the rate actually used |
+| `SampleFormat` | 18 | 3 = 16-bit, left then right |
+
+- Order, as in UnixLib: NumBuffers, StreamFlags, Activate16, then
+  GetFrequency and SampleFormat (which only work once active).
+
+### Testing without RISC OS
+
+`tests/fake_swi.c` fakes the three modules: it records what each SWI was
+given, keeps the sound it receives, and "plays" only when the test says
+time has passed. `tests/test_output.c` checks the settings each backend
+uses, how much it keeps queued, that the sound received is exactly what
+`midisynth_render` produces, the fallback, the rate change, and that
+DigitalRenderer isn't taken from another program. Pointers passed in
+registers go through `MS_PTR` (`src/riscos_swi.h`), which the fake swaps
+for small tokens, because a 64-bit pointer doesn't fit in an int.
 
 ## File names
 

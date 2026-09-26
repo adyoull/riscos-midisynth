@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.4.0 (not yet released)
+
+- **DigitalRenderer fallback.** `midisynth_output_open` (and so
+  `*MIDIPlay`) plays through DigitalRenderer when SharedSoundBuffer isn't
+  available. It won't take DigitalRenderer from another program that is
+  using it, and if DigitalRenderer plays at a different rate, the synth
+  switches to it. `MIDISynth$Output` set to `SharedSoundBuffer` or
+  `DigitalRenderer` allows only that one. `!MIDISynth`'s `LoadSound`
+  loads DigitalRenderer when needed, and `*MIDIPlay` says when it's
+  using it.
+- New API (the old calls still work):
+  - `midisynth_last_error(ms)`: the last error for one synth, so threads
+    and synths don't overwrite each other's (`NULL` for create).
+  - `midisynth_config`, `midisynth_config_init` and `midisynth_create_ex`,
+    for settings; the first is `max_voices` (1-256, default 96).
+  - `midisynth_output_*` are declared on every system (open returns 0
+    outside RISC OS), and `midisynth_output_name` says which output is in
+    use.
+- The sound output is out of `midisynth.c`: `output.c` picks a backend,
+  `output_ssb.c` and `output_dr.c` are the backends. `make test` now also
+  tests them against fake SWIs (`tests/fake_swi.c`).
+- `CONTRIBUTING.md` (where things go, code style, versions) and
+  `.editorconfig`.
+- The SoundFont parameter is called `soundfont` (it can be an SF3).
+- The sound is unchanged.
+
 ## 0.3.2 (not yet released)
 
 Easier to maintain. The sound is unchanged.

@@ -5,7 +5,7 @@ A General MIDI software synthesiser for RISC OS 5 programs.
 RISC OS has no built-in General MIDI synth. Its MIDI support is for
 external hardware. So a program that wants to play `.mid` music has to bring
 its own. This library does that. It plays Standard MIDI Files, or MIDI events
-sent live, through a SoundFont (`.sf2`), using
+sent live, through a SoundFont (`.sf2` or `.sf3`), using
 [TinySoundFont](https://github.com/schellingb/TinySoundFont).
 
 You can use it in two ways:
@@ -14,9 +14,10 @@ You can use it in two ways:
   a buffer of 16-bit stereo samples. Use this when your program already has
   sound output, such as an SDL audio callback or a game's mixer.
 - **Play on its own.** On RISC OS, `midisynth_output_open()` plays through
-  the SharedSoundBuffer module, so it mixes with other programs' sound.
-  Call `midisynth_output_poll()` often (at least every 50 ms, for example on
-  every Wimp null event).
+  the SharedSoundBuffer module, so it mixes with other programs' sound. If
+  that isn't available, it uses DigitalRenderer directly instead (one
+  program at a time). Call `midisynth_output_poll()` often (at least every
+  50 ms, for example on every Wimp null event).
 
 It is written in portable C. It also builds on Linux and macOS, which is
 handy for testing (`midi2wav`).
@@ -26,7 +27,8 @@ handy for testing (`midi2wav`).
 | | |
 |---|---|
 | `include/midisynth.h` | the API |
-| `src/midisynth.c` | the library |
+| `src/midisynth.c` | the synth |
+| `src/output*.c` | playing on its own: SharedSoundBuffer, DigitalRenderer |
 | `examples/midiplay.c` | RISC OS command-line MIDI player (`*MIDIPlay`) |
 | `examples/midi2wav.c` | render a MIDI file to a WAV file (any system) |
 | `app/!MIDISynth` | resource application: holds the SoundFont, sets `MIDISynth$SoundFont`, adds `*MIDIPlay` |
@@ -35,6 +37,7 @@ handy for testing (`midi2wav`).
 | `tests/` | host tests (`make test`) and the script that makes their files |
 | `tools/` | `mkrozip.py` (zip with RISC OS filetypes), `mksprites.py` (`!Sprites`) |
 | `docs/` | design notes and release steps |
+| `CONTRIBUTING.md` | where things go, code style, versions |
 
 ## Using it
 
@@ -42,8 +45,9 @@ handy for testing (`midi2wav`).
 #include "midisynth.h"
 
 midisynth *ms = midisynth_create(NULL, 44100);   /* NULL: use MIDISynth$SoundFont */
-if (!ms) { printf("%s\n", midisynth_error()); ... }
-midisynth_load_file(ms, "<MyApp$Dir>.Music.theme");
+if (!ms) { printf("%s\n", midisynth_last_error(NULL)); ... }
+if (!midisynth_load_file(ms, "<MyApp$Dir>.Music.theme"))
+    printf("%s\n", midisynth_last_error(ms));
 midisynth_set_loop(ms, 1);
 midisynth_play(ms);
 
@@ -55,16 +59,30 @@ midisynth_output_open(ms, "MyApp");
 /* ...and midisynth_output_poll(ms) on every null event */
 ```
 
+More settings (for now, the number of voices) go through
+`midisynth_create_ex`:
+
+```c
+midisynth_config c;
+midisynth_config_init(&c);                       /* defaults first, always */
+c.max_voices = 48;
+midisynth *ms = midisynth_create_ex(&c);
+```
+
 Link with `-lmidisynth -lpthread -lm`.
 
 - RISC OS filenames (`<MyApp$Dir>.Music.theme`, `SDFS::Disc.$.x`) and
   Unix-style names both work.
+- Functions that can fail return 1 (or a pointer) on success and 0 (or
+  NULL) on failure; `midisynth_last_error(ms)` then says why
+  (`midisynth_last_error(NULL)` for `midisynth_create`).
 - You can control playback from your main thread while another thread
-  renders: each synth has its own lock. `midisynth_error()` is shared, so
-  read it straight after the call that failed, and make all the
-  `midisynth_output_*` calls from one thread.
-- `MIDISYNTH_VERSION` (e.g. `"0.3.2"`) and `MIDISYNTH_VERSION_NUM`
-  (`302`) give the version at compile time.
+  renders: each synth has its own lock. Make all the `midisynth_output_*`
+  calls for a synth from one thread.
+- The `midisynth_output_*` calls exist on every system; outside RISC OS,
+  `midisynth_output_open` returns 0.
+- `MIDISYNTH_VERSION` (e.g. `"0.4.0"`) and `MIDISYNTH_VERSION_NUM`
+  (`400`) give the version at compile time.
 - Channel 9 (the tenth) is drums, as General MIDI requires.
 
 ### The SoundFont
@@ -122,11 +140,15 @@ make test                              # tests, on the host
 ## Requirements (RISC OS)
 
 - RISC OS 5.
-- The SharedSound, StreamManager and SharedSoundBuffer modules, for
-  `midisynth_output_*` and `midiplay`. These are in `System:Modules` on
-  current RISC OS 5 releases. `!MIDISynth` loads them when `*MIDIPlay`
-  runs (its `LoadSound` file), and reports a clear error if one is
-  missing.
+- For `midisynth_output_*` and `midiplay`: the SharedSound,
+  StreamManager and SharedSoundBuffer modules, or else DigitalRenderer
+  0.55 or later. These are in `System:Modules` on current RISC OS 5
+  releases. `!MIDISynth` loads them when `*MIDIPlay` runs (its `LoadSound`
+  file), and reports a clear error if neither can be used.
+  - DigitalRenderer has one user at a time: midisynth won't take it from
+    a program that is already using it.
+  - `MIDISynth$Output` set to `SharedSoundBuffer` or `DigitalRenderer`
+    allows only that one (e.g. to test DigitalRenderer).
   - StreamManager and SharedSoundBuffer are freeware, © John Duffell
     2004. His terms allow passing them on intact but not publishing them
     on other web sites (you must link to his site), so they are **not**

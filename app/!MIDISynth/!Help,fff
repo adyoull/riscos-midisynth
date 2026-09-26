@@ -41,15 +41,26 @@ Press Escape to stop.
 
 Sound modules
 -------------
-*MIDIPlay needs these modules:
+*MIDIPlay plays through SharedSoundBuffer, which mixes with other
+programs' sound. It needs:
 
   SharedSound         1.07 or later
   StreamManager       0.03 or later
   SharedSoundBuffer   0.07 or later
 
 Current RISC OS 5 releases have them in System:Modules, and !MIDISynth
-loads them from there when they're needed. Double-clicking !MIDISynth
-checks for them, and gives an error if one is missing.
+loads them from there when they're needed.
+
+If SharedSoundBuffer can't be used, *MIDIPlay plays through
+DigitalRenderer (0.55 or later, in System:Modules) instead. Only one
+program can use DigitalRenderer at a time, so it won't play while
+another program is using it. To use DigitalRenderer even when
+SharedSoundBuffer is there, type:
+
+  *Set MIDISynth$Output DigitalRenderer
+
+Double-clicking !MIDISynth checks the modules, and gives an error if
+neither way of playing is available.
 
 StreamManager and SharedSoundBuffer are freeware by John Duffell. His
 terms say they may not be published on other web sites, so they are not

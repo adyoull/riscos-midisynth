@@ -23,7 +23,7 @@ int main(int argc, char **argv)
     }
     ms = midisynth_create(argv[2], rate);
     if (!ms || !midisynth_load_file(ms, argv[1])) {
-        fprintf(stderr, "midi2wav: %s\n", midisynth_error());
+        fprintf(stderr, "midi2wav: %s\n", midisynth_last_error(ms));
         midisynth_destroy(ms);
         return 1;
     }

@@ -28,26 +28,32 @@ CC      ?= cc
 CFLAGS  ?= -O2
 WARN     = -Wall
 INC      = -Iinclude -Ithird_party/TinySoundFont
+
+# The library's source files (see src/midisynth_internal.h for what each does)
+LIB_SRCS = src/midisynth.c src/output.c src/output_ssb.c src/output_dr.c
+LIB_HDRS = include/midisynth.h src/midisynth_internal.h src/output.h src/riscos_swi.h
 # midisynth.c compiles these in, so it must be rebuilt when they change
-LIB_DEPS = src/midisynth.c include/midisynth.h \
-           third_party/TinySoundFont/tsf.h third_party/TinySoundFont/tml.h \
-           third_party/stb/stb_vorbis.c
+THIRD_PARTY = third_party/TinySoundFont/tsf.h third_party/TinySoundFont/tml.h \
+              third_party/stb/stb_vorbis.c
 
 HOST_DIR = build/host
 RO_DIR   = build/riscos
+HOST_OBJS = $(LIB_SRCS:src/%.c=$(HOST_DIR)/%.o)
+RO_OBJS   = $(LIB_SRCS:src/%.c=$(RO_DIR)/%.o)
 
 .PHONY: all host riscos install app zip test test-asan test-tsan test-update clean
 
 all: host
 
 # ---- host ---------------------------------------------------------------
+# (no sound output here: midisynth_output_open returns 0)
 host: $(HOST_DIR)/libmidisynth.a $(HOST_DIR)/midi2wav
 
-$(HOST_DIR)/midisynth.o: $(LIB_DEPS)
+$(HOST_DIR)/%.o: src/%.c $(LIB_HDRS) $(THIRD_PARTY)
 	@mkdir -p $(HOST_DIR)
 	$(CC) $(CFLAGS) $(WARN) $(INC) -c $< -o $@
 
-$(HOST_DIR)/libmidisynth.a: $(HOST_DIR)/midisynth.o
+$(HOST_DIR)/libmidisynth.a: $(HOST_OBJS)
 	ar rcs $@ $^
 
 $(HOST_DIR)/midi2wav: examples/midi2wav.c $(HOST_DIR)/libmidisynth.a
@@ -56,11 +62,11 @@ $(HOST_DIR)/midi2wav: examples/midi2wav.c $(HOST_DIR)/libmidisynth.a
 # ---- RISC OS ------------------------------------------------------------
 riscos: $(RO_DIR)/libmidisynth.a $(RO_DIR)/midiplay,ff8
 
-$(RO_DIR)/midisynth.o: $(LIB_DEPS)
+$(RO_DIR)/%.o: src/%.c $(LIB_HDRS) $(THIRD_PARTY)
 	@mkdir -p $(RO_DIR)
 	$(CROSS)gcc $(RO_CFLAGS) $(WARN) $(INC) -c $< -o $@
 
-$(RO_DIR)/libmidisynth.a: $(RO_DIR)/midisynth.o
+$(RO_DIR)/libmidisynth.a: $(RO_OBJS)
 	$(CROSS)ar rcs $@ $^
 
 $(RO_DIR)/midiplay: examples/midiplay.c $(RO_DIR)/libmidisynth.a
@@ -91,35 +97,49 @@ zip: app
 	$(PYTHON) tools/mkrozip.py build/MIDISynth-$(VERSION).zip build '!MIDISynth'
 
 # ---- tests (host) -------------------------------------------------------
-TEST_DIR = build/test
+# test_midisynth: the synth, built as for the host (no sound output).
+# test_output: the output backends, built against fake RISC OS sound SWIs
+# (tests/fake_swi.c).
+TEST_DIR   = build/test
 ASAN_FLAGS = -O1 -fsanitize=address,undefined -fno-omit-frame-pointer
+TSAN_FLAGS = -O1 -fsanitize=thread
+FAKE_FLAGS = -DMIDISYNTH_FAKE_SWI -Itests/fake -Itests
+TEST_DEPS  = $(LIB_SRCS) $(LIB_HDRS) $(THIRD_PARTY) tests/test_midisynth.c \
+             tests/test_output.c tests/fake_swi.c tests/fake_swi.h tests/fake/kernel.h
+
 $(TEST_DIR)/files: tests/mktestfiles.py
 	$(PYTHON) tests/mktestfiles.py $@
 	@touch $@
 
+# $(1) = flags, $(2) = name suffix
 define test_build
 	@mkdir -p $(TEST_DIR)
-	$(CC) -g $(1) $(WARN) $(INC) src/midisynth.c tests/test_midisynth.c -lpthread -lm -o $(2)
+	$(CC) -g $(1) $(WARN) $(INC) $(LIB_SRCS) tests/test_midisynth.c -lpthread -lm -o $(TEST_DIR)/test_midisynth$(2)
+	$(CC) -g $(1) $(WARN) $(INC) $(FAKE_FLAGS) $(LIB_SRCS) tests/fake_swi.c tests/test_output.c -lpthread -lm -o $(TEST_DIR)/test_output$(2)
+endef
+define test_run
+	$(TEST_DIR)/test_midisynth$(1) $(TEST_DIR)/files
+	$(TEST_DIR)/test_output$(1) $(TEST_DIR)/files
 endef
 
-$(TEST_DIR)/test_midisynth: $(LIB_DEPS) tests/test_midisynth.c
-	$(call test_build,$(CFLAGS),$@)
+$(TEST_DIR)/built: $(TEST_DEPS)
+	$(call test_build,$(CFLAGS),)
+	@touch $@
 
-test: $(TEST_DIR)/test_midisynth $(TEST_DIR)/files
-	$(TEST_DIR)/test_midisynth $(TEST_DIR)/files
+test: $(TEST_DIR)/built $(TEST_DIR)/files
+	$(call test_run,)
 
 test-asan: $(TEST_DIR)/files
-	$(call test_build,$(ASAN_FLAGS),$(TEST_DIR)/test_asan)
-	$(TEST_DIR)/test_asan $(TEST_DIR)/files
+	$(call test_build,$(ASAN_FLAGS),_asan)
+	$(call test_run,_asan)
 
 test-tsan: $(TEST_DIR)/files
-	$(call test_build,-O1 -fsanitize=thread,$(TEST_DIR)/test_tsan)
-	$(TEST_DIR)/test_tsan $(TEST_DIR)/files
+	$(call test_build,$(TSAN_FLAGS),_tsan)
+	$(call test_run,_tsan)
 
 # Only after checking that a change in the sound is intended
-test-update: $(TEST_DIR)/test_midisynth $(TEST_DIR)/files
+test-update: $(TEST_DIR)/built $(TEST_DIR)/files
 	$(TEST_DIR)/test_midisynth $(TEST_DIR)/files --update
-
 
 clean:
 	rm -rf build
