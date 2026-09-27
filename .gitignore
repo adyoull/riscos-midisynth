@@ -5,3 +5,5 @@ claude.md
 START-HERE.md
 *START-HERE*.md
 __pycache__/
+# Notes passed between projects; they stay on the local drive
+handoffs/
