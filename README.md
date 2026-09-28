@@ -153,8 +153,9 @@ make test                              # tests, on the host
     2004. His terms allow passing them on intact but not publishing them
     on other web sites (you must link to his site), so they are **not**
     included in the `!MIDISynth` zip. Get `ssb.zip` from the !RDPClient
-    page at <https://orac.co.uk/software/rdpclient/>, where they are
-    hosted by kind permission of the author. John Duffell's own site is
+    page, <https://orac.co.uk/software/rdpclient/rdpclient.html>, where
+    they are hosted by kind permission of the author. John Duffell's own
+    site is
     on the Internet Archive:
     <https://web.archive.org/web/20110920080106/http://www.duffell.riscos.me.uk/>.
   - Programs that use `midisynth_output_*` should load the modules

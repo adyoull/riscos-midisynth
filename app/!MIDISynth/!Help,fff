@@ -68,7 +68,7 @@ included with !MIDISynth. If you don't have them, download ssb.zip from
 the !RDPClient page on Andrew Sellors' website, where they are hosted by
 kind permission of the author:
 
-  https://orac.co.uk/software/rdpclient/
+  https://orac.co.uk/software/rdpclient/rdpclient.html
 
 then merge its !System into yours: open !Boot, click System, and drag
 the !System from ssb.zip into the System merge window.
