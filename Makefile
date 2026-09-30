@@ -20,6 +20,9 @@ SOUNDFONT ?= TimGM6mb.sf2
 # 1 in 32768). A NEON build was tried: GCC finds almost nothing in
 # TinySoundFont's voice loop to vectorise, so there's one library for all.
 RO_CFLAGS ?= -O3 -ffast-math -mtune=cortex-a72 -fstack-clash-protection
+# UnixLib for midiplay: the folder holding the libunixlib.a to link with,
+# e.g. a riscos-unixlib release. Empty means the one in GCCSDK_INSTALL_ENV.
+UNIXLIB ?=
 PYTHON ?= python3
 # The version comes from include/midisynth.h, so there's one place to change.
 VERSION := $(shell sed -n 's/^\#define MIDISYNTH_VERSION  *"\(.*\)"/\1/p' include/midisynth.h)
@@ -70,7 +73,7 @@ $(RO_DIR)/libmidisynth.a: $(RO_OBJS)
 	$(CROSS)ar rcs $@ $^
 
 $(RO_DIR)/midiplay: examples/midiplay.c $(RO_DIR)/libmidisynth.a
-	$(CROSS)gcc $(RO_CFLAGS) $(WARN) -Iinclude -static $< -L$(RO_DIR) -lmidisynth -lpthread -lm -o $@
+	$(CROSS)gcc $(RO_CFLAGS) $(WARN) -Iinclude -static $< -L$(RO_DIR) $(if $(UNIXLIB),-L$(UNIXLIB)) -lmidisynth -lpthread -lm -o $@
 
 $(RO_DIR)/midiplay,ff8: $(RO_DIR)/midiplay
 	$(ELF2AIF) -e $< $@

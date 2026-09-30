@@ -39,11 +39,15 @@ make test-tsan       # the same, checking threads
    `MIDISYNTH_VERSION`). The Makefile reads it from there.
 2. In `CHANGELOG.md`, change "(not yet released)" to the date.
 3. Check: `make clean && make test test-asan test-tsan`.
-4. Build for RISC OS and make the zip:
+4. Build for RISC OS and make the zip, linking `midiplay` with the latest
+   [riscos-unixlib](https://github.com/adyoull/riscos-unixlib) release
+   (`UNIXLIB` is the folder holding its `libunixlib.a`; leave it out to use
+   the one in the GCCSDK environment):
    ```sh
    make riscos zip GCCSDK_INSTALL_ENV=~/gccsdk/env ELF2AIF=/path/to/elf2aif \
-        SOUNDFONT=/path/to/TimGM6mb.sf2
+        UNIXLIB=/path/to/riscos-unixlib-release SOUNDFONT=/path/to/TimGM6mb.sf2
    ```
+   Check the `libunixlib.a` against the release's `SHA256SUMS` first.
    This gives `build/MIDISynth-<version>.zip`, with `!MIDISynth`, the
    SoundFont and `midiplay`, and the RISC OS filetypes set.
    - Set `SOURCE_DATE_EPOCH` to get the same zip every time.

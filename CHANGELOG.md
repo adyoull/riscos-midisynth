@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.1 (not yet released)
+
+- `midiplay` is linked with UnixLib 5.0.3 from
+  [riscos-unixlib](https://github.com/adyoull/riscos-unixlib), which has
+  the fixes made for the RISC OS ports (the pthread ticker, `read()`
+  near the stack, `ctime`, and more). The library itself is unchanged:
+  programs that link it use their own UnixLib.
+- The Makefile's new `UNIXLIB` setting names the folder with the
+  `libunixlib.a` to link `midiplay` with.
+- `!Help` and the README link to the !RDPClient page itself for `ssb.zip`.
+
 ## 0.4.0 (not yet released)
 
 - **DigitalRenderer fallback.** `midisynth_output_open` (and so

@@ -122,7 +122,7 @@ You need the [GCCSDK](https://www.riscos.info/index.php/GCCSDK) cross compiler
 
 ```sh
 make                                   # host: build/host/libmidisynth.a, midi2wav
-make riscos GCCSDK_INSTALL_ENV=~/gccsdk/env ELF2AIF=/path/to/elf2aif
+make riscos GCCSDK_INSTALL_ENV=~/gccsdk/env ELF2AIF=/path/to/elf2aif UNIXLIB=/path/to/unixlib
 make install GCCSDK_INSTALL_ENV=~/gccsdk/env   # header + library into the GCCSDK env
 make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/MIDISynth-<version>.zip
 make test                              # tests, on the host
