@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.2 (not yet released)
+
+- `midiplay` is linked with UnixLib 5.0.3.1-rc9 (a riscos-unixlib
+  pre-release). Since 5.0.3 it has fixes for `fork()`, `_exit()` and
+  threads in programs that poll the Wimp often. `midiplay` has no threads
+  of its own, so it doesn't need the PThreadTicker module.
+- Nothing else has changed.
+
 ## 0.4.1 (not yet released)
 
 - `midiplay` is linked with UnixLib 5.0.3 from
