@@ -1,0 +1,11 @@
+| Test 3: how much processor time the music needs. Nothing is played: each
+| song is rendered as fast as possible. Takes about a minute.
+Obey <Obey$Dir>.Setup
+Echo ==== 3 Speed: <Sys$Date> <Sys$Time> ==== { >> <MSTest$Out> }
+Echo Test 3: rendering tttheme2 at 44100 Hz...
+Run <MSTest$Dir>.midiplay -t -o <MSTest$Out> <MSTest$Dir>.Songs.tttheme2
+Echo Test 3: rendering tttheme2 at 22050 Hz...
+Run <MSTest$Dir>.midiplay -t -r 22050 -o <MSTest$Out> <MSTest$Dir>.Songs.tttheme2
+Echo Test 3: rendering linns_basket at 44100 Hz...
+Run <MSTest$Dir>.midiplay -t -o <MSTest$Out> <MSTest$Dir>.Songs.linns_basket
+Echo Test 3 done.

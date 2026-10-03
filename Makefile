@@ -7,6 +7,7 @@
 #   make app             build !MIDISynth (needs a SoundFont, see README)
 #   make zip             zip !MIDISynth with RISC OS filetypes
 #   make test            host tests (also: test-asan, test-tsan, test-update)
+#   make riscos-tests    a zip of tests to run on RISC OS (see tests/riscos)
 #
 # How to make a release: docs/RELEASING.md.
 #
@@ -44,7 +45,7 @@ RO_DIR   = build/riscos
 HOST_OBJS = $(LIB_SRCS:src/%.c=$(HOST_DIR)/%.o)
 RO_OBJS   = $(LIB_SRCS:src/%.c=$(RO_DIR)/%.o)
 
-.PHONY: all host riscos install app zip test test-asan test-tsan test-update clean
+.PHONY: all host riscos install app zip riscos-tests test test-asan test-tsan test-update clean
 
 all: host
 
@@ -98,6 +99,32 @@ app: $(RO_DIR)/midiplay,ff8
 zip: app
 	rm -f build/MIDISynth-$(VERSION).zip
 	$(PYTHON) tools/mkrozip.py build/MIDISynth-$(VERSION).zip build '!MIDISynth'
+
+# ---- test pack for RISC OS (tests/riscos) --------------------------------
+# OPENMSX: a folder with OpenMSX's tttheme2.mid, linns_basket.mid,
+# license.txt and readme.txt (in OpenTTD's music download).
+# SF3: FluidR3Mono_GM.sf3, for the separate -SF3 zip (optional).
+OPENMSX ?=
+SF3 ?=
+TEST_SUFFIX ?=
+TESTS = MIDISynthTests-$(VERSION)$(TEST_SUFFIX)
+
+riscos-tests: $(RO_DIR)/midiplay,ff8
+	@test -n "$(OPENMSX)" || { echo "set OPENMSX=<folder with tttheme2.mid etc.>"; exit 1; }
+	rm -rf build/tests && mkdir -p build/tests/MIDISynthTests/Songs
+	cp tests/riscos/*,f?? build/tests/MIDISynthTests/
+	cp app/!MIDISynth/LoadSound,feb $(RO_DIR)/midiplay,ff8 build/tests/MIDISynthTests/
+	cp $(OPENMSX)/tttheme2.mid build/tests/MIDISynthTests/Songs/tttheme2,fd4
+	cp $(OPENMSX)/linns_basket.mid build/tests/MIDISynthTests/Songs/linns_basket,fd4
+	cp $(OPENMSX)/license.txt build/tests/MIDISynthTests/Songs/Licence,fff
+	cp $(OPENMSX)/readme.txt build/tests/MIDISynthTests/Songs/ReadMe,fff
+	$(PYTHON) tools/mkrozip.py build/$(TESTS).zip build/tests MIDISynthTests
+	@if [ -n "$(SF3)" ]; then \
+	  rm -rf build/tests-sf3 && mkdir -p build/tests-sf3/MIDISynthTests/SoundFonts && \
+	  cp "$(SF3)" build/tests-sf3/MIDISynthTests/SoundFonts/FluidR3Mono,ffd && \
+	  cp "$(SF3:.sf3=-copyright.txt)" build/tests-sf3/MIDISynthTests/SoundFonts/Copyright,fff && \
+	  $(PYTHON) tools/mkrozip.py build/MIDISynthTests-SF3.zip build/tests-sf3 MIDISynthTests; \
+	fi
 
 # ---- tests (host) -------------------------------------------------------
 # test_midisynth: the synth, built as for the host (no sound output).

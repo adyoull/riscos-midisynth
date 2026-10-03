@@ -1,0 +1,8 @@
+| Test 4: play 30 seconds through SharedSoundBuffer. Listen for gaps,
+| stutters or wrong notes. The desktop waits while it plays; Escape stops it.
+Obey <Obey$Dir>.Setup
+Echo ==== 4 Play (SharedSoundBuffer): <Sys$Date> <Sys$Time> ==== { >> <MSTest$Out> }
+Obey <MSTest$Dir>.LoadSound
+Echo Test 4: playing tttheme2 for 30 seconds...
+Run <MSTest$Dir>.midiplay -s 30 -o <MSTest$Out> <MSTest$Dir>.Songs.tttheme2
+Echo Test 4 done. Please note what it sounded like.

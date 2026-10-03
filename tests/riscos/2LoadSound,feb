@@ -1,0 +1,10 @@
+| Test 2: !MIDISynth's LoadSound (a copy is in this folder). It should load
+| SharedSoundBuffer and its two modules from System:Modules, or else
+| DigitalRenderer, and stop with an error only if neither can be loaded.
+Obey <Obey$Dir>.Setup
+Echo ==== 2 LoadSound: <Sys$Date> <Sys$Time> ==== { >> <MSTest$Out> }
+Obey <MSTest$Dir>.LoadSound
+Echo LoadSound finished without an error { >> <MSTest$Out> }
+Help SharedSoundBuffer { >> <MSTest$Out> }
+Help DigitalRenderer { >> <MSTest$Out> }
+Echo Test 2 done.

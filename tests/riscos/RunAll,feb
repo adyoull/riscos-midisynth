@@ -1,0 +1,7 @@
+| Runs tests 1 to 5 in turn (test 6 needs the SF3 zip: run it on its own).
+Obey <Obey$Dir>.1Info
+Obey <Obey$Dir>.2LoadSound
+Obey <Obey$Dir>.3Speed
+Obey <Obey$Dir>.4Play
+Obey <Obey$Dir>.5PlayDR
+Echo All done: please send the file Results, and what tests 4 and 5 sounded like.

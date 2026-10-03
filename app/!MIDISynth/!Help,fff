@@ -23,18 +23,25 @@ SF3 SoundFonts (compressed, as used by MuseScore) work too. They are
 small to download but are decoded into memory when loaded: a 24 MB .sf3
 can need 300-400 MB of memory, and takes a while to load.
 
+Big SoundFonts (an .sf2 over about 35 MB, or a big .sf3) need
+*MIDIPlay 0.4.2 or later. Older versions, and programs built with an
+older UnixLib, can only use 128 MB of memory for a SoundFont's samples.
+
 
 Playing a MIDI file
 -------------------
 At the command line (F12, or a Task window):
 
-  *MIDIPlay [-l] [-v volume] [-r rate] [-t] <MIDI file> [SoundFont]
+  *MIDIPlay [-l] [-v volume] [-r rate] [-t] [-s secs] [-o file]
+            <MIDI file> [SoundFont]
 
   -l          loop the song
   -v volume   volume in percent (default 100)
   -r rate     sample rate (default 44100)
   -t          don't play: render the song as fast as possible and
               report how much processor time the music needs
+  -s secs     stop after that many seconds
+  -o file     also add what it reports to the end of a file
 
 Press Escape to stop.
 

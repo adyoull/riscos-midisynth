@@ -115,6 +115,27 @@ sound better but take a long time to load and use a lot of memory.
   (nearer 400 MB while loading), and takes a while to decode. TimGM6mb
   needs 11 MB.
 
+### Big SoundFonts need a newer UnixLib
+
+All of a SoundFont's samples go in **one** block of memory, as 32-bit
+floats. For an `.sf2` that block is about 3.3 times the file's size
+(TimGM6mb: 6 MB file, 20 MB block; so the 141 MB FluidR3_GM.sf2 would
+need about 470 MB). FluidR3Mono_GM.sf3 needs a 284 MB block.
+
+- RISC OS 5 lets a dynamic area grow to 128 MB at most. GCCSDK's UnixLib
+  keeps a program's whole heap in one dynamic area, so with it a program
+  can't load any SoundFont whose samples need more than about 128 MB:
+  `midisynth_create` fails with "Couldn't load the SoundFont".
+- [riscos-unixlib](https://github.com/adyoull/riscos-unixlib) 5.0.3.1-rc4
+  and later carry the heap on into more dynamic areas, so one block can be
+  bigger than 128 MB. `midiplay` is linked with 5.0.3.1-rc9 (0.4.2 and
+  later); a program that links midisynth needs relinking with it too (for
+  example OpenTTD).
+- The memory must also be free: loading FluidR3Mono needs about 400 MB at
+  its peak, because the block is grown as the samples are decoded.
+- TimGM6mb, and other `.sf2` SoundFonts up to about 35 MB, work with any
+  UnixLib.
+
 ## Building
 
 You need the [GCCSDK](https://www.riscos.info/index.php/GCCSDK) cross compiler

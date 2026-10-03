@@ -1,0 +1,15 @@
+| Test 6: a big SoundFont (FluidR3Mono, 24 MB file, about 285 MB in
+| memory, 400 MB while loading). Needs SoundFonts.FluidR3Mono in this
+| folder: it comes in MIDISynthTests-SF3.zip. Loading may take a while.
+Obey <Obey$Dir>.Setup
+Echo ==== 6 Big SF3: <Sys$Date> <Sys$Time> ==== { >> <MSTest$Out> }
+Set MSTest$SF 0
+IfThere <MSTest$Dir>.SoundFonts.FluidR3Mono Then Set MSTest$SF 1
+If "<MSTest$SF>" = "0" Then Error 0 SoundFonts.FluidR3Mono is missing: unzip MIDISynthTests-SF3.zip over this folder first.
+Unset MSTest$SF
+Echo Test 6: loading FluidR3Mono and rendering 30 s of tttheme2...
+Run <MSTest$Dir>.midiplay -t -s 30 -o <MSTest$Out> <MSTest$Dir>.Songs.tttheme2 <MSTest$Dir>.SoundFonts.FluidR3Mono
+Obey <MSTest$Dir>.LoadSound
+Echo Test 6: playing 20 s with FluidR3Mono (it loads again first)...
+Run <MSTest$Dir>.midiplay -s 20 -o <MSTest$Out> <MSTest$Dir>.Songs.tttheme2 <MSTest$Dir>.SoundFonts.FluidR3Mono
+Echo Test 6 done.

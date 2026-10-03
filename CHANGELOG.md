@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.3 (not yet released)
+
+- `midiplay`:
+  - `-s secs` stops after that many seconds (of playing, or of music
+    with `-t`);
+  - `-o file` adds everything it reports to the end of a file, for test
+    runs;
+  - it says how long the SoundFont took to load, and always says which
+    sound output it is using.
+- Docs: big SoundFonts (samples over about 128 MB, such as FluidR3Mono.sf3,
+  or an .sf2 over about 35 MB) need UnixLib 5.0.3.1-rc4 or later, as `midiplay` has
+  from 0.4.2. README, `!Help` and docs/DESIGN.md explain why.
+- `tests/riscos/`: a test pack for the Pi (`make riscos-tests`).
+
 ## 0.4.2 (not yet released)
 
 - `midiplay` is linked with UnixLib 5.0.3.1-rc9 (a riscos-unixlib

@@ -1,0 +1,47 @@
+MIDISynthTests
+==============
+
+Tests of midisynth's *MIDIPlay on RISC OS. Each test is an Obey file:
+double-click it. What each test finds is added to the file Results in
+this folder. Please send back Results, and a few words on what tests 4,
+5 and 6 sounded like.
+
+Before you start
+----------------
+- Double-click !MIDISynth (0.4.0 or later) once, so that the SoundFont
+  is known (MIDISynth$SoundFont).
+- The midiplay in this folder is a test build. Your installed
+  !MIDISynth isn't changed.
+- While a song plays, the desktop waits for it (midiplay isn't a
+  desktop program). Escape stops it.
+
+The tests
+---------
+1Info       Which sound modules are loaded, and their versions.
+2LoadSound  !MIDISynth's LoadSound (the copy in this folder): it should
+            load SharedSoundBuffer, StreamManager and SharedSound from
+            System:Modules, or else DigitalRenderer. An error here means
+            neither could be loaded.
+3Speed      How much processor time the music takes. Nothing is played;
+            about a minute. The lines to look at are "Processor use
+            while playing" (lower is better) and "Slowest ... block"
+            (must be well under the block's length).
+4Play       Plays tttheme2 for 30 s through SharedSoundBuffer. Listen
+            for gaps, stutters or wrong notes.
+5PlayDR     The same through DigitalRenderer, the fallback. If
+            DigitalRenderer isn't in System:Modules, Results says "No
+            sound output"; that's fine to report too.
+6BigSF3     A big SoundFont: FluidR3Mono (24 MB file, about 285 MB in
+            memory, 400 MB while loading). Unzip MIDISynthTests-SF3.zip
+            over this folder first. It shows how long it takes to load,
+            and whether there's enough memory.
+RunAll      Runs 1 to 5 in turn.
+
+Files
+-----
+midiplay    the test build of *MIDIPlay (MIT licence)
+LoadSound   a copy of !MIDISynth's LoadSound
+Songs       two songs from OpenMSX (GPL-2; see Songs.Licence and
+            Songs.ReadMe)
+SoundFonts  (from MIDISynthTests-SF3.zip) FluidR3Mono (MIT licence; see
+            SoundFonts.Copyright)

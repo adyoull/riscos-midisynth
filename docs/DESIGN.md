@@ -120,6 +120,14 @@ marked section. After updating TinySoundFont, check them and run
 
 - A 22050 Hz option (with 2x upsampling): about half the work, loses
   sound above 11 kHz (30% of TimGM6mb's samples are 44.1 kHz).
+- **Memory limit (found by OpenTTD and UnixLib, 2026-10-01).** TinySoundFont
+  keeps all samples in one float block (FluidR3Mono.sf3: 284 MB; TimGM6mb:
+  20 MB), grown with realloc while an SF3 decodes (about 400 MB at the
+  peak). RISC OS 5 caps a dynamic area at 128 MB, and GCCSDK's UnixLib puts
+  the whole heap in one, so a block over about 128 MB can't be allocated.
+  riscos-unixlib 5.0.3.1-rc4 and later spread the heap over several areas
+  and allow one block across them; midiplay links with it. Programs that
+  link midisynth need the same UnixLib for big SoundFonts.
 - Samples as 16-bit instead of float: half the memory (TinySoundFont
   converts to float at load: TimGM6mb's 6 MB becomes 12 MB; SF3 files are
   decoded completely, e.g. 24 MB becomes 285 MB). This means changing
