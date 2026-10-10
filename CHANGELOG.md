@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.4 (2026-10-10)
+
+- `midiplay` is linked with UnixLib 5.0.3.3 from riscos-unixlib (a full
+  release; 0.4.3 used 5.0.3.1-rc9). Its fixes include threads waiting
+  inside `write()`/`read()`, `fork()` in threaded programs, and the heap
+  after a gap between dynamic areas.
+- Nothing else has changed.
+
 ## 0.4.3 (2026-10-10)
 
 The first version confirmed on RISC OS: `*MIDIPlay` plays MIDI files on a
