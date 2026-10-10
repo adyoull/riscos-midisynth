@@ -1,6 +1,9 @@
 # Changelog
 
-## 0.4.3 (not yet released)
+## 0.4.3 (2026-10-10)
+
+The first version confirmed on RISC OS: `*MIDIPlay` plays MIDI files on a
+Raspberry Pi 4 (RISC OS 5).
 
 - `midiplay`:
   - `-s secs` stops after that many seconds (of playing, or of music

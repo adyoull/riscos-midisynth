@@ -181,11 +181,13 @@ make test                              # tests, on the host
     <https://web.archive.org/web/20110920080106/http://www.duffell.riscos.me.uk/>.
   - Programs that use `midisynth_output_*` should load the modules
     themselves first, for example with the same `RMEnsure` lines.
+- Tested on a Raspberry Pi 4 with RISC OS 5: `*MIDIPlay` plays MIDI files
+  (0.4.3).
 - CPU: rendering General MIDI in software takes a fair amount of CPU. On a
-  PC it renders about 170 times faster than real time. It hasn't yet been
-  measured on RISC OS hardware: `*MIDIPlay -t <file>` renders a song
-  without playing it and reports the processor time it takes. On slower
-  machines, a lower sample rate (22050) roughly halves the work.
+  PC it renders about 170 times faster than real time. `*MIDIPlay -t
+  <file>` renders a song without playing it and reports the processor time
+  it takes on your machine. On slower machines, a lower sample rate (22050)
+  roughly halves the work.
 
 ## Performance
 
