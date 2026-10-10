@@ -211,7 +211,17 @@ make test                              # tests, on the host
 ## Programs using it
 
 - [OpenTTD for RISC OS](https://github.com/adyoull/riscos-openttd): the
-  `midisynth` music driver plays the OpenMSX soundtrack.
+  `midisynth` music driver plays the OpenMSX soundtrack. It uses the
+  SoundFont in `!SoftMIDI` if there is one, or its own.
+- [fheroes2 for RISC OS](https://github.com/adyoull/riscos-fheroes2)
+  (Free Heroes of Might and Magic II): its SDL2_mixer has a MIDI decoder
+  that plays the game's music through midisynth, with the TimGM6mb
+  SoundFont it ships.
+- Planned: [riscos-unixlib](https://github.com/adyoull/riscos-unixlib)'s
+  `/dev/midi`, so any UnixLib program can send it MIDI. It needs the
+  SoftMIDI module (see `docs/DESIGN.md`), which doesn't exist yet.
+
+If your program uses midisynth, let us know and we'll add it here.
 
 ## More
 

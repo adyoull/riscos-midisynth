@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.0 (not yet released)
+## 0.5.0 (2026-10-10)
 
 The application is renamed **!SoftMIDI** (it was `!MIDISynth`), because
 another RISC OS program already uses that name.
@@ -17,6 +17,7 @@ another RISC OS program already uses that name.
   `midisynth_*` calls are unchanged.
 - If you have `!MIDISynth` in `!Boot.Resources`, replace it with
   `!SoftMIDI`.
+- README: the list of programs using midisynth adds fheroes2.
 
 ## 0.4.4 (2026-10-10)
 
