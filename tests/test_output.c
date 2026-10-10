@@ -89,7 +89,7 @@ static void test_ssb(void)
     midisynth_output_close(ms);
     CHECK(fake.ssb_closed == 1, "closed twice");
 
-    CHECK(midisynth_output_open(ms, NULL) && !strcmp(fake.ssb_name, "MIDISynth"), "default name \"%s\"", fake.ssb_name);
+    CHECK(midisynth_output_open(ms, NULL) && !strcmp(fake.ssb_name, "SoftMIDI"), "default name \"%s\"", fake.ssb_name);
     midisynth_destroy(ms);
     CHECK(fake.ssb_closed == 2, "destroy didn't close the stream");
 }
@@ -169,20 +169,39 @@ static void test_choice(void)
     midisynth *ms;
 
     fake_reset();
-    setenv("MIDISynth$Output", "digitalrenderer", 1);
+    setenv("SoftMIDI$Output", "digitalrenderer", 1);
     ms = playing_synth(44100);
     CHECK(midisynth_output_open(ms, "Test"), "open: %s", midisynth_last_error(ms));
     CHECK(midisynth_output_name(ms) && !strcmp(midisynth_output_name(ms), "DigitalRenderer"),
-          "MIDISynth$Output ignored: used %s", midisynth_output_name(ms));
+          "SoftMIDI$Output ignored: used %s", midisynth_output_name(ms));
     CHECK(!fake.ssb_open, "opened SharedSoundBuffer too");
     midisynth_destroy(ms);
 
     fake_reset();
-    setenv("MIDISynth$Output", "Nonsense", 1);
+    setenv("SoftMIDI$Output", "Nonsense", 1);
     ms = playing_synth(44100);
-    CHECK(!midisynth_output_open(ms, "Test"), "opened with MIDISynth$Output=Nonsense");
+    CHECK(!midisynth_output_open(ms, "Test"), "opened with SoftMIDI$Output=Nonsense");
     CHECK(strstr(midisynth_last_error(ms), "no known output") != NULL, "error \"%s\"", midisynth_last_error(ms));
     midisynth_destroy(ms);
+    unsetenv("SoftMIDI$Output");
+
+    /* The name before 0.5.0 still works when the new one isn't set... */
+    fake_reset();
+    setenv("MIDISynth$Output", "DigitalRenderer", 1);
+    ms = playing_synth(44100);
+    CHECK(midisynth_output_open(ms, "Test") && midisynth_output_name(ms)
+          && !strcmp(midisynth_output_name(ms), "DigitalRenderer"),
+          "MIDISynth$Output (old name) ignored: used %s", midisynth_output_name(ms));
+    midisynth_destroy(ms);
+    /* ...and the new one wins when both are set */
+    fake_reset();
+    setenv("SoftMIDI$Output", "SharedSoundBuffer", 1);
+    ms = playing_synth(44100);
+    CHECK(midisynth_output_open(ms, "Test") && midisynth_output_name(ms)
+          && !strcmp(midisynth_output_name(ms), "SharedSoundBuffer"),
+          "SoftMIDI$Output didn't win over MIDISynth$Output: used %s", midisynth_output_name(ms));
+    midisynth_destroy(ms);
+    unsetenv("SoftMIDI$Output");
     unsetenv("MIDISynth$Output");
 }
 
@@ -195,6 +214,7 @@ int main(int argc, char **argv)
     snprintf(sf2, sizeof sf2, "%s/test.sf2", argv[1]);
     snprintf(song, sizeof song, "%s/song.mid", argv[1]);
     unsetenv("MIDISynth$Output");
+    unsetenv("SoftMIDI$Output");
 
     test_ssb();
     test_dr_fallback();

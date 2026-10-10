@@ -1,4 +1,0 @@
-| !MIDISynth run file: boot it, then check the sound modules are there,
-| so a missing module is reported straight away.
-Run <Obey$Dir>.!Boot
-Obey <MIDISynth$Dir>.LoadSound

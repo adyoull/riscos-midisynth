@@ -1,0 +1,3 @@
+| *MIDIPlay: load the sound modules, then run the player.
+Obey <SoftMIDI$Dir>.LoadSound
+Run <SoftMIDI$Dir>.midiplay %*0

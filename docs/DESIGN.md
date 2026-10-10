@@ -134,7 +134,7 @@ marked section. After updating TinySoundFont, check them and run
   TinySoundFont's voice renderer, which would probably also be the
   biggest speed-up on a Pi. Measure on the Pi first (`*MIDIPlay -t`).
 - More settings in `midisynth_config` (a gain, the queue length).
-- A RISC OS module (SWIs `MIDISynth_Open/Write/Reset/Close`) so UnixLib's
+- A RISC OS module, "SoftMIDI" (SWIs `SoftMIDI_Open/Write/Reset/Close`), so UnixLib's
   `/dev/midi`, BASIC and other programs can share one synth. The
   interface UnixLib expects is in riscos-unixlib `docs/MIDISYNTH-MODULE.md`.
 
@@ -143,7 +143,7 @@ marked section. After updating TinySoundFont, check them and run
 `midisynth_output_open` (`output.c`) tries each backend in turn and keeps
 the first that opens; the reasons the others failed go in the error
 message ("SharedSoundBuffer: SWI not known; DigitalRenderer: in use by
-another program"). `MIDISynth$Output` names the only one to try. A backend
+another program"). `SoftMIDI$Output` names the only one to try. A backend
 is three functions (`open`, `poll`, `close`, see `src/output.h`); each
 keeps about 100 ms queued and renders more on every poll.
 
@@ -181,7 +181,7 @@ Where it differs, this code follows RDPClient's `c/Sound`, which works.
   100 ms is queued. It must be called at least every 50 ms.
 - StreamManager and SharedSoundBuffer may not be redistributed on web
   sites (John Duffell's terms), so the release zip doesn't include them;
-  `!MIDISynth.LoadSound` loads them from `System:Modules`.
+  `!SoftMIDI.LoadSound` loads them from `System:Modules`.
 
 ### DigitalRenderer
 

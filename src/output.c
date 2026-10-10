@@ -24,16 +24,16 @@ static const struct ms_backend *const ms_backends[] = {
 int
 midisynth_output_open(midisynth *ms, const char *name)
 {
-    /* MIDISynth$Output names the only backend to try (for testing, or
-       to choose DigitalRenderer on purpose) */
-    const char *only = getenv("MIDISynth$Output");
+    /* SoftMIDI$Output (MIDISynth$Output before 0.5.0) names the only
+       backend to try (for testing, or to choose DigitalRenderer on purpose) */
+    const char *only = ms_getenv("SoftMIDI$Output", "MIDISynth$Output");
     char why[MS_ERRLEN] = "", err[MS_ERRLEN];
     size_t i;
 
     if (ms->out)
         return 1;
     if (name == NULL || *name == 0)
-        name = "MIDISynth";
+        name = "SoftMIDI";
     for (i = 0; i < MS_NBACKENDS; i++) {
         const struct ms_backend *b = ms_backends[i];
         struct ms_output *out;
@@ -50,7 +50,7 @@ midisynth_output_open(midisynth *ms, const char *name)
         snprintf(why + strlen(why), sizeof(why) - strlen(why), "%s%s: %s",
                  why[0] ? "; " : "", b->name, err);
     }
-    ms_error(ms, "No sound output", why[0] ? why : "MIDISynth$Output names no known output");
+    ms_error(ms, "No sound output", why[0] ? why : "SoftMIDI$Output names no known output");
     return 0;
 }
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Make !Sprites for !MIDISynth: a quaver above piano keys.
+"""Make !Sprites for !SoftMIDI: a quaver above piano keys.
 32bpp new-format sprites (RISC OS 3.5+) with a 1bpp mask."""
 import struct, sys
 
@@ -50,7 +50,7 @@ def sprite(name, n):
     return struct.pack('<I12s7I', hdr + len(body), name.encode().ljust(12, b'\0'),
                        n - 1, n - 1, 0, 31, hdr, hdr + len(img), mode) + body
 
-sprites = [sprite('!midisynth', 34), sprite('sm!midisynth', 17)]
+sprites = [sprite('!softmidi', 34), sprite('sm!softmidi', 17)]
 data = b''.join(sprites)
 out = struct.pack('<3I', len(sprites), 16, 16 + len(data)) + data
 open(sys.argv[1], 'wb').write(out)

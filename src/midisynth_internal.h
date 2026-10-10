@@ -40,6 +40,10 @@ struct midisynth
    Doesn't take the lock. */
 void ms_error(midisynth *ms, const char *msg, const char *extra);
 
+/* getenv(name), or getenv(old_name) if that's unset or empty (old_name may
+   be NULL). For system variables renamed with the app in 0.5.0. */
+const char *ms_getenv(const char *name, const char *old_name);
+
 /* Change the output sample rate (8000-96000), e.g. to the rate
    DigitalRenderer chose. Takes the lock. Returns 1, or 0 if out of range. */
 int ms_set_rate(midisynth *ms, int rate);

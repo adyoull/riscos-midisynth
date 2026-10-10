@@ -1,4 +1,4 @@
-MIDISynthTests
+SoftMIDITests
 ==============
 
 Tests of midisynth's *MIDIPlay on RISC OS. Each test is an Obey file:
@@ -8,17 +8,17 @@ this folder. Please send back Results, and a few words on what tests 4,
 
 Before you start
 ----------------
-- Double-click !MIDISynth (0.4.0 or later) once, so that the SoundFont
-  is known (MIDISynth$SoundFont).
+- Double-click !SoftMIDI (0.5.0 or later) once, so that the SoundFont
+  is known (SoftMIDI$SoundFont).
 - The midiplay in this folder is a test build. Your installed
-  !MIDISynth isn't changed.
+  !SoftMIDI isn't changed.
 - While a song plays, the desktop waits for it (midiplay isn't a
   desktop program). Escape stops it.
 
 The tests
 ---------
 1Info       Which sound modules are loaded, and their versions.
-2LoadSound  !MIDISynth's LoadSound (the copy in this folder): it should
+2LoadSound  !SoftMIDI's LoadSound (the copy in this folder): it should
             load SharedSoundBuffer, StreamManager and SharedSound from
             System:Modules, or else DigitalRenderer. An error here means
             neither could be loaded.
@@ -32,7 +32,7 @@ The tests
             DigitalRenderer isn't in System:Modules, Results says "No
             sound output"; that's fine to report too.
 6BigSF3     A big SoundFont: FluidR3Mono (24 MB file, about 285 MB in
-            memory, 400 MB while loading). Unzip MIDISynthTests-SF3.zip
+            memory, 400 MB while loading). Unzip SoftMIDITests-SF3.zip
             over this folder first. It shows how long it takes to load,
             and whether there's enough memory.
 RunAll      Runs 1 to 5 in turn.
@@ -40,8 +40,8 @@ RunAll      Runs 1 to 5 in turn.
 Files
 -----
 midiplay    the test build of *MIDIPlay (MIT licence)
-LoadSound   a copy of !MIDISynth's LoadSound
+LoadSound   a copy of !SoftMIDI's LoadSound
 Songs       two songs from OpenMSX (GPL-2; see Songs.Licence and
             Songs.ReadMe)
-SoundFonts  (from MIDISynthTests-SF3.zip) FluidR3Mono (MIT licence; see
+SoundFonts  (from SoftMIDITests-SF3.zip) FluidR3Mono (MIT licence; see
             SoundFonts.Copyright)

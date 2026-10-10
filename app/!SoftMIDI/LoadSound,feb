@@ -1,0 +1,19 @@
+| !SoftMIDI: load the sound modules that *MIDIPlay needs.
+| It plays through SharedSoundBuffer (needs SharedSound and StreamManager
+| too) or, if that can't be loaded, through DigitalRenderer.
+| SharedSoundBuffer and StreamManager are by John Duffell and are not
+| included with !SoftMIDI. See !Help for where to get them.
+RMEnsure SharedSound 1.07 IfThere System:Modules.SSound Then RMLoad System:Modules.SSound
+RMEnsure StreamManager 0.03 IfThere System:Modules.StreamMan Then RMLoad System:Modules.StreamMan
+| Load SharedSoundBuffer only if the two modules it needs are there.
+Set SoftMIDI$SSB 1
+RMEnsure SharedSound 1.07 Set SoftMIDI$SSB 0
+RMEnsure StreamManager 0.03 Set SoftMIDI$SSB 0
+If "<SoftMIDI$SSB>" = "1" Then RMEnsure SharedSoundBuffer 0.07 IfThere System:Modules.SSBuffer Then RMLoad System:Modules.SSBuffer
+Unset SoftMIDI$SSB
+| No SharedSoundBuffer (or SoftMIDI$Output, or the old MIDISynth$Output,
+| asks for it): DigitalRenderer.
+If "<SoftMIDI$Output>" = "DigitalRenderer" Then RMEnsure DigitalRenderer 0.55 IfThere System:Modules.DRenderer Then RMLoad System:Modules.DRenderer
+If "<MIDISynth$Output>" = "DigitalRenderer" Then RMEnsure DigitalRenderer 0.55 IfThere System:Modules.DRenderer Then RMLoad System:Modules.DRenderer
+RMEnsure SharedSoundBuffer 0.07 RMEnsure DigitalRenderer 0.55 IfThere System:Modules.DRenderer Then RMLoad System:Modules.DRenderer
+RMEnsure SharedSoundBuffer 0.07 RMEnsure DigitalRenderer 0.55 Error 0 SoftMIDI needs SharedSoundBuffer 0.07 (or DigitalRenderer 0.55). See !SoftMIDI.!Help.

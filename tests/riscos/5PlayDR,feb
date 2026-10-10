@@ -2,10 +2,10 @@
 | SharedSoundBuffer is there. Listen as in test 4.
 Obey <Obey$Dir>.Setup
 Echo ==== 5 Play (DigitalRenderer): <Sys$Date> <Sys$Time> ==== { >> <MSTest$Out> }
-Set MIDISynth$Output DigitalRenderer
+Set SoftMIDI$Output DigitalRenderer
 Obey <MSTest$Dir>.LoadSound
 Help DigitalRenderer { >> <MSTest$Out> }
 Echo Test 5: playing tttheme2 for 30 seconds through DigitalRenderer...
 Run <MSTest$Dir>.midiplay -s 30 -o <MSTest$Out> <MSTest$Dir>.Songs.tttheme2
-Unset MIDISynth$Output
+Unset SoftMIDI$Output
 Echo Test 5 done. Please note what it sounded like.

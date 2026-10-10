@@ -1,7 +1,7 @@
 /* midiplay: play a MIDI file (RISC OS), through SharedSoundBuffer or, if
    that isn't available, DigitalRenderer.
    midiplay [-l] [-v volume%] [-r rate] [-t] [-s secs] [-o file] <song.mid> [soundfont]
-   Without a SoundFont argument it uses MIDISynth$SoundFont.
+   Without a SoundFont argument it uses SoftMIDI$SoundFont.
    Press Escape to stop.
    -t       renders the whole song as fast as possible without playing it,
             and reports how much processor time the music takes.

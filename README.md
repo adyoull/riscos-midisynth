@@ -8,6 +8,12 @@ its own. This library does that. It plays Standard MIDI Files, or MIDI events
 sent live, through a SoundFont (`.sf2` or `.sf3`), using
 [TinySoundFont](https://github.com/schellingb/TinySoundFont).
 
+The RISC OS application is called **!SoftMIDI**. Before 0.5.0 it was
+`!MIDISynth`; it was renamed because another RISC OS program already uses
+that name. The library keeps its name (`libmidisynth`, `midisynth_*`).
+Its system variables are now `SoftMIDI$SoundFont` and `SoftMIDI$Output`;
+the old `MIDISynth$` names are still read if the new ones aren't set.
+
 You can use it in two ways:
 
 - **Render into your own buffer.** `midisynth_render()` fills (or mixes into)
@@ -31,7 +37,7 @@ handy for testing (`midi2wav`).
 | `src/output*.c` | playing on its own: SharedSoundBuffer, DigitalRenderer |
 | `examples/midiplay.c` | RISC OS command-line MIDI player (`*MIDIPlay`) |
 | `examples/midi2wav.c` | render a MIDI file to a WAV file (any system) |
-| `app/!MIDISynth` | resource application: holds the SoundFont, sets `MIDISynth$SoundFont`, adds `*MIDIPlay` |
+| `app/!SoftMIDI` | resource application: holds the SoundFont, sets `SoftMIDI$SoundFont`, adds `*MIDIPlay` |
 | `third_party/TinySoundFont` | `tsf.h` / `tml.h`, unmodified |
 | `third_party/stb` | `stb_vorbis.c` (decodes SF3 SoundFonts), unmodified |
 | `tests/` | host tests (`make test`) and the script that makes their files |
@@ -44,7 +50,7 @@ handy for testing (`midi2wav`).
 ```c
 #include "midisynth.h"
 
-midisynth *ms = midisynth_create(NULL, 44100);   /* NULL: use MIDISynth$SoundFont */
+midisynth *ms = midisynth_create(NULL, 44100);   /* NULL: use SoftMIDI$SoundFont */
 if (!ms) { printf("%s\n", midisynth_last_error(NULL)); ... }
 if (!midisynth_load_file(ms, "<MyApp$Dir>.Music.theme"))
     printf("%s\n", midisynth_last_error(ms));
@@ -81,8 +87,8 @@ Link with `-lmidisynth -lpthread -lm`.
   calls for a synth from one thread.
 - The `midisynth_output_*` calls exist on every system; outside RISC OS,
   `midisynth_output_open` returns 0.
-- `MIDISYNTH_VERSION` (e.g. `"0.4.0"`) and `MIDISYNTH_VERSION_NUM`
-  (`400`) give the version at compile time.
+- `MIDISYNTH_VERSION` (e.g. `"0.5.0"`) and `MIDISYNTH_VERSION_NUM`
+  (`500`) give the version at compile time.
 - Channel 9 (the tenth) is drums, as General MIDI requires.
 
 ### The SoundFont
@@ -91,14 +97,14 @@ A SoundFont holds the instrument samples. General MIDI ones are typically
 6 to 30 MB, so it is better for programs to share one than to ship their own.
 Passing `NULL` to `midisynth_create()` uses:
 
-1. `MIDISynth$SoundFont` on RISC OS, which `!MIDISynth` sets when it boots;
+1. `SoftMIDI$SoundFont` on RISC OS, which `!SoftMIDI` sets when it boots;
 2. `MIDISYNTH_SOUNDFONT` on other systems.
 
 A program can also pass its own path, for example to use a SoundFont it
-ships itself if `MIDISynth$SoundFont` isn't set.
+ships itself if `SoftMIDI$SoundFont` isn't set.
 
-The `!MIDISynth` release zip includes **TimGM6mb** (6 MB, GPL-2; see
-`app/!MIDISynth/SFLicence,fff`). It gives good General MIDI coverage for its
+The `!SoftMIDI` release zip includes **TimGM6mb** (6 MB, GPL-2; see
+`app/!SoftMIDI/SFLicence,fff`). It gives good General MIDI coverage for its
 size. Any General MIDI `.sf2` works. Larger ones (such as FluidR3_GM, 140 MB)
 sound better but take a long time to load and use a lot of memory.
 
@@ -145,7 +151,7 @@ You need the [GCCSDK](https://www.riscos.info/index.php/GCCSDK) cross compiler
 make                                   # host: build/host/libmidisynth.a, midi2wav
 make riscos GCCSDK_INSTALL_ENV=~/gccsdk/env ELF2AIF=/path/to/elf2aif UNIXLIB=/path/to/unixlib
 make install GCCSDK_INSTALL_ENV=~/gccsdk/env   # header + library into the GCCSDK env
-make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/MIDISynth-<version>.zip
+make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/SoftMIDI-<version>.zip
 make test                              # tests, on the host
 ```
 
@@ -164,16 +170,16 @@ make test                              # tests, on the host
 - For `midisynth_output_*` and `midiplay`: the SharedSound,
   StreamManager and SharedSoundBuffer modules, or else DigitalRenderer
   0.55 or later. These are in `System:Modules` on current RISC OS 5
-  releases. `!MIDISynth` loads them when `*MIDIPlay` runs (its `LoadSound`
+  releases. `!SoftMIDI` loads them when `*MIDIPlay` runs (its `LoadSound`
   file), and reports a clear error if neither can be used.
   - DigitalRenderer has one user at a time: midisynth won't take it from
     a program that is already using it.
-  - `MIDISynth$Output` set to `SharedSoundBuffer` or `DigitalRenderer`
+  - `SoftMIDI$Output` set to `SharedSoundBuffer` or `DigitalRenderer`
     allows only that one (e.g. to test DigitalRenderer).
   - StreamManager and SharedSoundBuffer are freeware, © John Duffell
     2004. His terms allow passing them on intact but not publishing them
     on other web sites (you must link to his site), so they are **not**
-    included in the `!MIDISynth` zip. Get `ssb.zip` from the !RDPClient
+    included in the `!SoftMIDI` zip. Get `ssb.zip` from the !RDPClient
     page, <https://orac.co.uk/software/rdpclient/rdpclient.html>, where
     they are hosted by kind permission of the author. John Duffell's own
     site is

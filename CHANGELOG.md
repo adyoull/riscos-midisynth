@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.0 (not yet released)
+
+The application is renamed **!SoftMIDI** (it was `!MIDISynth`), because
+another RISC OS program already uses that name.
+
+- `!SoftMIDI` sets `SoftMIDI$Dir` and `SoftMIDI$SoundFont`; its sprite is
+  `!softmidi`. `*MIDIPlay` is unchanged.
+- The library reads `SoftMIDI$SoundFont` and `SoftMIDI$Output`. If they
+  aren't set it still reads the old `MIDISynth$SoundFont` and
+  `MIDISynth$Output`, so existing setups keep working.
+- The default SharedSoundBuffer stream name is "SoftMIDI".
+- The release zip is `SoftMIDI-<version>.zip`; the test pack is
+  `SoftMIDITests`.
+- The library keeps its name: `libmidisynth`, `midisynth.h` and the
+  `midisynth_*` calls are unchanged.
+- If you have `!MIDISynth` in `!Boot.Resources`, replace it with
+  `!SoftMIDI`.
+
 ## 0.4.4 (2026-10-10)
 
 - `midiplay` is linked with UnixLib 5.0.3.3 from riscos-unixlib (a full

@@ -4,8 +4,8 @@
 #   make riscos          cross build with GCCSDK: libmidisynth.a + midiplay,ff8
 #   make install         copy the RISC OS library and header into the
 #                        GCCSDK environment ($(GCCSDK_INSTALL_ENV))
-#   make app             build !MIDISynth (needs a SoundFont, see README)
-#   make zip             zip !MIDISynth with RISC OS filetypes
+#   make app             build !SoftMIDI (needs a SoundFont, see README)
+#   make zip             zip !SoftMIDI with RISC OS filetypes
 #   make test            host tests (also: test-asan, test-tsan, test-update)
 #   make riscos-tests    a zip of tests to run on RISC OS (see tests/riscos)
 #
@@ -84,21 +84,21 @@ install: $(RO_DIR)/libmidisynth.a
 	cp include/midisynth.h $(GCCSDK_INSTALL_ENV)/include/
 	cp $(RO_DIR)/libmidisynth.a $(GCCSDK_INSTALL_ENV)/lib/
 
-# ---- !MIDISynth resource application -------------------------------------
+# ---- !SoftMIDI resource application -------------------------------------
 app: $(RO_DIR)/midiplay,ff8
-	rm -rf build/!MIDISynth
-	cp -r app/!MIDISynth build/
-	cp $(RO_DIR)/midiplay,ff8 build/!MIDISynth/midiplay,ff8
+	rm -rf build/!SoftMIDI
+	cp -r app/!SoftMIDI build/
+	cp $(RO_DIR)/midiplay,ff8 build/!SoftMIDI/midiplay,ff8
 	@if [ -f "$(SOUNDFONT)" ]; then \
-	  cp "$(SOUNDFONT)" build/!MIDISynth/SoundFont,ffd; \
+	  cp "$(SOUNDFONT)" build/!SoftMIDI/SoundFont,ffd; \
 	else \
-	  echo "note: no SoundFont at $(SOUNDFONT); put one in !MIDISynth as SoundFont"; \
+	  echo "note: no SoundFont at $(SOUNDFONT); put one in !SoftMIDI as SoundFont"; \
 	fi
 
 # tools/mkrozip.py stores the RISC OS filetypes from the ,xxx suffixes
 zip: app
-	rm -f build/MIDISynth-$(VERSION).zip
-	$(PYTHON) tools/mkrozip.py build/MIDISynth-$(VERSION).zip build '!MIDISynth'
+	rm -f build/SoftMIDI-$(VERSION).zip
+	$(PYTHON) tools/mkrozip.py build/SoftMIDI-$(VERSION).zip build '!SoftMIDI'
 
 # ---- test pack for RISC OS (tests/riscos) --------------------------------
 # OPENMSX: a folder with OpenMSX's tttheme2.mid, linns_basket.mid,
@@ -107,23 +107,23 @@ zip: app
 OPENMSX ?=
 SF3 ?=
 TEST_SUFFIX ?=
-TESTS = MIDISynthTests-$(VERSION)$(TEST_SUFFIX)
+TESTS = SoftMIDITests-$(VERSION)$(TEST_SUFFIX)
 
 riscos-tests: $(RO_DIR)/midiplay,ff8
 	@test -n "$(OPENMSX)" || { echo "set OPENMSX=<folder with tttheme2.mid etc.>"; exit 1; }
-	rm -rf build/tests && mkdir -p build/tests/MIDISynthTests/Songs
-	cp tests/riscos/*,f?? build/tests/MIDISynthTests/
-	cp app/!MIDISynth/LoadSound,feb $(RO_DIR)/midiplay,ff8 build/tests/MIDISynthTests/
-	cp $(OPENMSX)/tttheme2.mid build/tests/MIDISynthTests/Songs/tttheme2,fd4
-	cp $(OPENMSX)/linns_basket.mid build/tests/MIDISynthTests/Songs/linns_basket,fd4
-	cp $(OPENMSX)/license.txt build/tests/MIDISynthTests/Songs/Licence,fff
-	cp $(OPENMSX)/readme.txt build/tests/MIDISynthTests/Songs/ReadMe,fff
-	$(PYTHON) tools/mkrozip.py build/$(TESTS).zip build/tests MIDISynthTests
+	rm -rf build/tests && mkdir -p build/tests/SoftMIDITests/Songs
+	cp tests/riscos/*,f?? build/tests/SoftMIDITests/
+	cp app/!SoftMIDI/LoadSound,feb $(RO_DIR)/midiplay,ff8 build/tests/SoftMIDITests/
+	cp $(OPENMSX)/tttheme2.mid build/tests/SoftMIDITests/Songs/tttheme2,fd4
+	cp $(OPENMSX)/linns_basket.mid build/tests/SoftMIDITests/Songs/linns_basket,fd4
+	cp $(OPENMSX)/license.txt build/tests/SoftMIDITests/Songs/Licence,fff
+	cp $(OPENMSX)/readme.txt build/tests/SoftMIDITests/Songs/ReadMe,fff
+	$(PYTHON) tools/mkrozip.py build/$(TESTS).zip build/tests SoftMIDITests
 	@if [ -n "$(SF3)" ]; then \
-	  rm -rf build/tests-sf3 && mkdir -p build/tests-sf3/MIDISynthTests/SoundFonts && \
-	  cp "$(SF3)" build/tests-sf3/MIDISynthTests/SoundFonts/FluidR3Mono,ffd && \
-	  cp "$(SF3:.sf3=-copyright.txt)" build/tests-sf3/MIDISynthTests/SoundFonts/Copyright,fff && \
-	  $(PYTHON) tools/mkrozip.py build/MIDISynthTests-SF3.zip build/tests-sf3 MIDISynthTests; \
+	  rm -rf build/tests-sf3 && mkdir -p build/tests-sf3/SoftMIDITests/SoundFonts && \
+	  cp "$(SF3)" build/tests-sf3/SoftMIDITests/SoundFonts/FluidR3Mono,ffd && \
+	  cp "$(SF3:.sf3=-copyright.txt)" build/tests-sf3/SoftMIDITests/SoundFonts/Copyright,fff && \
+	  $(PYTHON) tools/mkrozip.py build/SoftMIDITests-SF3.zip build/tests-sf3 SoftMIDITests; \
 	fi
 
 # ---- tests (host) -------------------------------------------------------

@@ -1,4 +1,4 @@
-| Test 2: !MIDISynth's LoadSound (a copy is in this folder). It should load
+| Test 2: !SoftMIDI's LoadSound (a copy is in this folder). It should load
 | SharedSoundBuffer and its two modules from System:Modules, or else
 | DigitalRenderer, and stop with an error only if neither can be loaded.
 Obey <Obey$Dir>.Setup

@@ -21,9 +21,9 @@ extern "C" {
 /* The library version. Programs that link midisynth statically can check
    it at compile time, e.g. #if MIDISYNTH_VERSION_NUM >= 400 */
 #define MIDISYNTH_VERSION_MAJOR 0
-#define MIDISYNTH_VERSION_MINOR 4
-#define MIDISYNTH_VERSION_PATCH 4
-#define MIDISYNTH_VERSION       "0.4.4"
+#define MIDISYNTH_VERSION_MINOR 5
+#define MIDISYNTH_VERSION_PATCH 0
+#define MIDISYNTH_VERSION       "0.5.0"
 #define MIDISYNTH_VERSION_NUM   (MIDISYNTH_VERSION_MAJOR * 10000 + \
                                  MIDISYNTH_VERSION_MINOR * 100 + MIDISYNTH_VERSION_PATCH)
 
@@ -44,7 +44,8 @@ typedef struct midisynth midisynth;
 typedef struct midisynth_config
 {
     const char *soundfont;   /* .sf2/.sf3 file; NULL (default) means the one
-                                named by MIDISynth$SoundFont on RISC OS, or
+                                named by SoftMIDI$SoundFont on RISC OS (or
+                                MIDISynth$SoundFont, its name before 0.5.0), or
                                 the MIDISYNTH_SOUNDFONT environment variable
                                 elsewhere */
     int sample_rate;         /* output rate in Hz, 8000-96000 (default 44100) */
@@ -116,7 +117,7 @@ void midisynth_render(midisynth *ms, int16_t *buffer, int frames, int mix);
    - Uses SharedSoundBuffer, which mixes with other programs' sound. If
      that isn't available, uses DigitalRenderer directly, which only one
      program can use at a time (midisynth won't take it from another).
-     Setting MIDISynth$Output to SharedSoundBuffer or DigitalRenderer
+     Setting SoftMIDI$Output to SharedSoundBuffer or DigitalRenderer
      allows only that one.
    - DigitalRenderer may play at a different rate from the synth's; the
      synth then changes its rate to match.

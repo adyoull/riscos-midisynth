@@ -1,7 +1,7 @@
-| MIDISynthTests: set-up shared by the test Obey files (not run on its own)
+| SoftMIDITests: set-up shared by the test Obey files (not run on its own)
 Set MSTest$Dir <Obey$Dir>
 Set MSTest$Out <MSTest$Dir>.Results
-| The SoundFont comes from !MIDISynth: it must have been seen or run.
-If "<MIDISynth$SoundFont>" = "" Then Error 0 Please double-click !MIDISynth first (it sets MIDISynth$SoundFont), then run this test again.
+| The SoundFont comes from !SoftMIDI: it must have been seen or run.
+If "<SoftMIDI$SoundFont>" = "" Then Error 0 Please double-click !SoftMIDI first (it sets SoftMIDI$SoundFont), then run this test again.
 | midiplay gets its memory from dynamic areas; this is for the program itself.
 WimpSlot -min 2048K -max 2048K

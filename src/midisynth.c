@@ -55,7 +55,7 @@
 static char ms_errbuf[MS_ERRLEN];
 
 /* File names may be given the RISC OS way (from a system variable, say:
-   "SDFS::Disc.$.Sounds.GM/sf2" or "<MIDISynth$Dir>.GM/sf2"); UnixLib's
+   "SDFS::Disc.$.Sounds.GM/sf2" or "<SoftMIDI$Dir>.GM/sf2"); UnixLib's
    fopen expects Unix-style names, so convert those first. */
 static const char *
 ms_path(const char *name, char *buf, size_t len)
@@ -135,11 +135,25 @@ ms_init_channels(midisynth *ms)
     }
 }
 
+/* The SoundFont to use when none is given. !SoftMIDI sets SoftMIDI$SoundFont;
+   MIDISynth$SoundFont is what it was called before 0.5.0 (the app was
+   !MIDISynth), so that is still read if the new one isn't set. */
 #ifdef __riscos__
-#define MS_SOUNDFONT_VAR "MIDISynth$SoundFont"
+#define MS_SOUNDFONT_VAR     "SoftMIDI$SoundFont"
+#define MS_SOUNDFONT_VAR_OLD "MIDISynth$SoundFont"
 #else
-#define MS_SOUNDFONT_VAR "MIDISYNTH_SOUNDFONT"
+#define MS_SOUNDFONT_VAR     "MIDISYNTH_SOUNDFONT"
+#define MS_SOUNDFONT_VAR_OLD NULL
 #endif
+
+const char *
+ms_getenv(const char *name, const char *old_name)
+{
+    const char *v = getenv(name);
+    if ((v == NULL || *v == 0) && old_name != NULL)
+        v = getenv(old_name);
+    return v;
+}
 
 void
 midisynth_config_init(midisynth_config *config)
@@ -158,7 +172,7 @@ midisynth_create_ex(const midisynth_config *config)
     char pbuf[1024];
 
     if (soundfont == NULL || *soundfont == 0)
-        soundfont = getenv(MS_SOUNDFONT_VAR);
+        soundfont = ms_getenv(MS_SOUNDFONT_VAR, MS_SOUNDFONT_VAR_OLD);
     if (soundfont == NULL || *soundfont == 0) {
         ms_error(NULL, "No SoundFont given (and " MS_SOUNDFONT_VAR " isn't set)", NULL);
         return NULL;

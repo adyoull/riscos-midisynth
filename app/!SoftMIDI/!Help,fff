@@ -1,23 +1,27 @@
-!MIDISynth
-==========
+!SoftMIDI
+=========
 
 A General MIDI SoundFont and a small MIDI file player for RISC OS 5.
 Programs built with the midisynth library use the SoundFont in here to
 play music, so you only need one copy on your computer.
 
+!SoftMIDI was called !MIDISynth before version 0.5.0; it was renamed
+because another program already uses that name. If you have
+!MIDISynth in !Boot.Resources, replace it with !SoftMIDI.
+
 Installing
 ----------
-Copy !MIDISynth into !Boot.Resources (open !Boot, then Resources) so it
+Copy !SoftMIDI into !Boot.Resources (open !Boot, then Resources) so it
 is set up every time you start the computer. You can also just
 double-click it once before running a program that needs it.
 
 It sets:
 
-  MIDISynth$SoundFont   the SoundFont file programs should use
+  SoftMIDI$SoundFont   the SoundFont file programs should use
 
 To use a different SoundFont, replace the file called SoundFont inside
-!MIDISynth, or set MIDISynth$SoundFont to your own .sf2 or .sf3 file after
-!MIDISynth has booted.
+!SoftMIDI, or set SoftMIDI$SoundFont to your own .sf2 or .sf3 file after
+!SoftMIDI has booted.
 
 SF3 SoundFonts (compressed, as used by MuseScore) work too. They are
 small to download but are decoded into memory when loaded: a 24 MB .sf3
@@ -55,7 +59,7 @@ programs' sound. It needs:
   StreamManager       0.03 or later
   SharedSoundBuffer   0.07 or later
 
-Current RISC OS 5 releases have them in System:Modules, and !MIDISynth
+Current RISC OS 5 releases have them in System:Modules, and !SoftMIDI
 loads them from there when they're needed.
 
 If SharedSoundBuffer can't be used, *MIDIPlay plays through
@@ -64,14 +68,14 @@ program can use DigitalRenderer at a time, so it won't play while
 another program is using it. To use DigitalRenderer even when
 SharedSoundBuffer is there, type:
 
-  *Set MIDISynth$Output DigitalRenderer
+  *Set SoftMIDI$Output DigitalRenderer
 
-Double-clicking !MIDISynth checks the modules, and gives an error if
+Double-clicking !SoftMIDI checks the modules, and gives an error if
 neither way of playing is available.
 
 StreamManager and SharedSoundBuffer are freeware by John Duffell. His
 terms say they may not be published on other web sites, so they are not
-included with !MIDISynth. If you don't have them, download ssb.zip from
+included with !SoftMIDI. If you don't have them, download ssb.zip from
 the !RDPClient page on Andrew Sellors' website, where they are hosted by
 kind permission of the author:
 

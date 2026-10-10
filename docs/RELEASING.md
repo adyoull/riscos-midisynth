@@ -13,7 +13,7 @@
 - The TimGM6mb SoundFont for the release zip: Debian/Ubuntu package
   `timgm6mb-soundfont` (`/usr/share/sounds/sf2/TimGM6mb.sf2`, version
   1.3), or the MuseScore repository. It is GPL-2: keep
-  `app/!MIDISynth/SFLicence` with it.
+  `app/!SoftMIDI/SFLicence` with it.
 
 ## Everyday work
 
@@ -48,15 +48,15 @@ make test-tsan       # the same, checking threads
         UNIXLIB=/path/to/riscos-unixlib-release SOUNDFONT=/path/to/TimGM6mb.sf2
    ```
    Check the `libunixlib.a` against the release's `SHA256SUMS` first.
-   This gives `build/MIDISynth-<version>.zip`, with `!MIDISynth`, the
+   This gives `build/SoftMIDI-<version>.zip`, with `!SoftMIDI`, the
    SoundFont and `midiplay`, and the RISC OS filetypes set.
    - Set `SOURCE_DATE_EPOCH` to get the same zip every time.
    - Don't add files to an existing zip with GCCSDK's `zip -,`: it
      duplicates entries. Make a new one.
-5. Try it on RISC OS: double-click `!MIDISynth` (icon, no error), then
+5. Try it on RISC OS: double-click `!SoftMIDI` (icon, no error), then
    `*MIDIPlay -l song.mid` (plays, loops, Escape stops it). Then
-   `*Set MIDISynth$Output DigitalRenderer` and play again (it should say
-   "playing through DigitalRenderer"), and `*Unset MIDISynth$Output`.
+   `*Set SoftMIDI$Output DigitalRenderer` and play again (it should say
+   "playing through DigitalRenderer"), and `*Unset SoftMIDI$Output`.
 6. Commit, tag and push:
    ```sh
    git tag v<version>
@@ -66,7 +66,7 @@ make test-tsan       # the same, checking threads
 7. On GitHub, make a release from the tag, paste the CHANGELOG entry as
    the notes, and attach the zip. With the GitHub CLI:
    ```sh
-   gh release create v<version> build/MIDISynth-<version>.zip --title "midisynth <version>" --notes-file notes.md
+   gh release create v<version> build/SoftMIDI-<version>.zip --title "SoftMIDI <version>" --notes-file notes.md
    ```
 
 ## Programs that use the library

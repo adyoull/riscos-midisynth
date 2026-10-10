@@ -1,8 +1,8 @@
 | Test 1: which sound and support modules are loaded, and the settings.
 Obey <Obey$Dir>.Setup
 Echo ==== 1 Info: <Sys$Date> <Sys$Time> ==== { >> <MSTest$Out> }
-Echo MIDISynth$SoundFont = <MIDISynth$SoundFont> { >> <MSTest$Out> }
-Echo MIDISynth$Output = <MIDISynth$Output> { >> <MSTest$Out> }
+Echo SoftMIDI$SoundFont = <SoftMIDI$SoundFont> { >> <MSTest$Out> }
+Echo SoftMIDI$Output = <SoftMIDI$Output> { >> <MSTest$Out> }
 Help SharedSound { >> <MSTest$Out> }
 Help StreamManager { >> <MSTest$Out> }
 Help SharedSoundBuffer { >> <MSTest$Out> }
