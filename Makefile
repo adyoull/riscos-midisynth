@@ -1,4 +1,4 @@
-# riscos-midisynth
+# riscos-softmidi (libmidisynth and !SoftMIDI)
 #
 #   make                 host build (Linux/macOS): libmidisynth.a + midi2wav
 #   make riscos          cross build with GCCSDK: libmidisynth.a + midiplay,ff8
@@ -8,11 +8,21 @@
 #   make zip             zip !SoftMIDI with RISC OS filetypes
 #   make test            host tests (also: test-asan, test-tsan, test-update)
 #   make riscos-tests    a zip of tests to run on RISC OS (see tests/riscos)
+#   make dist            the RISC OS library, header and licences as a tarball
+#   make soundfont       fetch TimGM6mb.sf2 (Ubuntu's package, checked by sha256)
+#   make check-riscos    riscos-crossdev's checks on midiplay (needs RCD_DIR)
+#   make ci              what GitHub runs: all of the above, then the zip
 #
 # How to make a release: docs/RELEASING.md.
 #
 # Cross build settings; override on the command line if yours differ.
+# In the riscos-crossdev image (and with its env.sh) RISCOS_TOOLCHAIN names
+# the toolchain: GCCSDK GCC 10.2 with riscos-unixlib, elf2aif on PATH.
+ifneq ($(RISCOS_TOOLCHAIN),)
+GCCSDK_INSTALL_ENV ?= $(RISCOS_TOOLCHAIN)
+else
 GCCSDK_INSTALL_ENV ?= $(HOME)/gccsdk/env
+endif
 CROSS  ?= $(GCCSDK_INSTALL_ENV)/bin/arm-riscos-gnueabihf-
 ELF2AIF ?= elf2aif
 SOUNDFONT ?= TimGM6mb.sf2
@@ -45,7 +55,7 @@ RO_DIR   = build/riscos
 HOST_OBJS = $(LIB_SRCS:src/%.c=$(HOST_DIR)/%.o)
 RO_OBJS   = $(LIB_SRCS:src/%.c=$(RO_DIR)/%.o)
 
-.PHONY: all host riscos install app zip riscos-tests test test-asan test-tsan test-update clean
+.PHONY: all host riscos install app zip dist soundfont check-riscos ci riscos-tests test test-asan test-tsan test-update clean
 
 all: host
 
@@ -99,6 +109,56 @@ app: $(RO_DIR)/midiplay,ff8
 zip: app
 	rm -f build/SoftMIDI-$(VERSION).zip
 	$(PYTHON) tools/mkrozip.py build/SoftMIDI-$(VERSION).zip build '!SoftMIDI'
+
+# ---- library tarball, for programs that link midisynth ------------------
+# include/midisynth.h, lib/libmidisynth.a and the licences, so a program
+# can build against a release without building midisynth itself.
+DIST = libmidisynth-$(VERSION)-riscos
+dist: $(RO_DIR)/libmidisynth.a
+	rm -rf build/$(DIST) && mkdir -p build/$(DIST)/include build/$(DIST)/lib build/$(DIST)/licences
+	cp include/midisynth.h build/$(DIST)/include/
+	cp $(RO_DIR)/libmidisynth.a build/$(DIST)/lib/
+	cp LICENSE build/$(DIST)/licences/midisynth.txt
+	cp third_party/TinySoundFont/LICENSE build/$(DIST)/licences/TinySoundFont.txt
+	cp third_party/stb/LICENSE build/$(DIST)/licences/stb_vorbis.txt
+	cp CHANGELOG.md build/$(DIST)/
+	tar -C build --owner=0 --group=0 --numeric-owner --sort=name \
+	    --mtime=@$$(git log -1 --format=%ct 2>/dev/null || echo 0) \
+	    -czf build/$(DIST).tar.gz $(DIST)
+
+# ---- the SoundFont for the zip -----------------------------------------
+# TimGM6mb 1.3 (GPL-2) from Ubuntu's timgm6mb-soundfont package, checked by
+# sha256, so a build on GitHub needs no files put in by hand.
+SF_DEB     = timgm6mb-soundfont_1.3-5_all.deb
+SF_DEB_URL = http://archive.ubuntu.com/ubuntu/pool/universe/t/timgm6mb-soundfont/$(SF_DEB)
+SF_DEB_SHA = b70bc29b8f27adef8f92a2d9c1e26cee977b84c68110f0dd4326d97730a7c3ed
+SF_SHA     = c5378b62028c920cb11e4803327983fee2f2cdff5dc89c708e39da417e51c854
+SF_FILE    = build/dl/TimGM6mb.sf2
+soundfont: $(SF_FILE)
+$(SF_FILE):
+	@mkdir -p build/dl/deb
+	test -s build/dl/$(SF_DEB) || curl -fsSL --retry 3 -o build/dl/$(SF_DEB) $(SF_DEB_URL)
+	echo "$(SF_DEB_SHA)  build/dl/$(SF_DEB)" | sha256sum -c --quiet
+	cd build/dl/deb && ar x ../$(SF_DEB) data.tar.xz && tar xJf data.tar.xz ./usr/share/sounds/sf2/TimGM6mb.sf2
+	mv build/dl/deb/usr/share/sounds/sf2/TimGM6mb.sf2 $@
+	rm -rf build/dl/deb
+	echo "$(SF_SHA)  $@" | sha256sum -c --quiet
+
+# ---- riscos-crossdev's checks, and the whole CI build ------------------
+# static linking, stack probes, FPU level (no VFPv4) and UnixLib
+check-riscos: $(RO_DIR)/midiplay
+	@test -n "$(RCD_DIR)" || { echo "set RCD_DIR to a riscos-crossdev checkout"; exit 1; }
+	$(RCD_DIR)/checks/check-all.sh $(RO_DIR)/midiplay $(RO_DIR)/libmidisynth.a
+
+# .github/workflows run this in the riscos-crossdev image
+ci:
+	$(MAKE) host
+	$(MAKE) test
+	$(MAKE) riscos
+	$(MAKE) check-riscos
+	$(MAKE) dist
+	$(MAKE) soundfont
+	$(MAKE) zip SOUNDFONT=$(SF_FILE)
 
 # ---- test pack for RISC OS (tests/riscos) --------------------------------
 # OPENMSX: a folder with OpenMSX's tttheme2.mid, linns_basket.mid,

@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+Build changes only: the library, `midiplay` and `!SoftMIDI` are unchanged.
+
+- Builds with [riscos-crossdev](https://github.com/adyoull/riscos-crossdev)
+  1.8.1 (named in the new `.riscos-deps`): the Makefile uses
+  `RISCOS_TOOLCHAIN` when it's set, and its `elf2aif`.
+- GitHub builds every push in the riscos-crossdev image (`make ci`), and
+  opens a pull request when riscos-crossdev makes a new release.
+- New targets:
+  - `make soundfont` fetches TimGM6mb (Ubuntu's package, checked by
+    sha256), so the zip needs no files put in by hand;
+  - `make dist` makes `libmidisynth-<version>-riscos.tar.gz`, the header,
+    library and licences, to attach to each release;
+  - `make check-riscos` runs riscos-crossdev's checks on `midiplay`;
+  - `make ci` does all of it.
+- The repository is now called riscos-softmidi.
+
 ## 0.5.0 (2026-10-10)
 
 The application is renamed **!SoftMIDI** (it was `!MIDISynth`), because

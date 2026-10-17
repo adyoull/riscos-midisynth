@@ -1,4 +1,4 @@
-# riscos-midisynth
+# riscos-softmidi
 
 A General MIDI software synthesiser for RISC OS 5 programs.
 
@@ -144,25 +144,34 @@ need about 470 MB). FluidR3Mono_GM.sf3 needs a 284 MB block.
 
 ## Building
 
-You need the [GCCSDK](https://www.riscos.info/index.php/GCCSDK) cross compiler
-(GCC 10, `arm-riscos-gnueabihf`) for RISC OS builds.
+For RISC OS builds you need
+[riscos-crossdev](https://github.com/adyoull/riscos-crossdev) (the release
+named in `.riscos-deps`): its container image, or its toolchain with
+`. env.sh`. It has GCCSDK GCC 10.2 with riscos-unixlib, and the fixed
+`elf2aif`. Any other GCCSDK environment works with
+`GCCSDK_INSTALL_ENV=... ELF2AIF=...`.
 
 ```sh
 make                                   # host: build/host/libmidisynth.a, midi2wav
-make riscos GCCSDK_INSTALL_ENV=~/gccsdk/env ELF2AIF=/path/to/elf2aif UNIXLIB=/path/to/unixlib
-make install GCCSDK_INSTALL_ENV=~/gccsdk/env   # header + library into the GCCSDK env
-make zip SOUNDFONT=/path/to/TimGM6mb.sf2 ...   # build/SoftMIDI-<version>.zip
+make riscos                            # RISC OS: libmidisynth.a, midiplay,ff8
+make install                           # header + library into the GCCSDK env
+make soundfont zip SOUNDFONT=build/dl/TimGM6mb.sf2   # build/SoftMIDI-<version>.zip
+make ci                                # everything GitHub builds and checks
 make test                              # tests, on the host
 ```
 
 - `midiplay` is converted to an Absolute (AIF) file with `elf2aif -e`, so it
-  doesn't need `!SharedLibs`. Use the `elf2aif` from
-  [riscos-openttd](https://github.com/adyoull/riscos-openttd) `tools/elf2aif`
-  (GCCSDK's, with fixes); see `docs/RELEASING.md`.
+  doesn't need `!SharedLibs`.
 - `make zip` uses `tools/mkrozip.py` (Python 3) to keep the RISC OS
   filetypes.
-- You can get TimGM6mb from Debian/Ubuntu's `timgm6mb-soundfont` package
-  (`/usr/share/sounds/sf2/TimGM6mb.sf2`) or from the MuseScore repository.
+- `make soundfont` fetches TimGM6mb from Ubuntu's `timgm6mb-soundfont`
+  package, checked by sha256.
+- GitHub builds every push with `make ci` in the riscos-crossdev image, and
+  opens a pull request when riscos-crossdev makes a new release (see
+  `docs/RELEASING.md`).
+- Each release has the RISC OS library as a tarball
+  (`libmidisynth-<version>-riscos.tar.gz`: header, `libmidisynth.a`,
+  licences), so programs can link it without building it.
 
 ## Requirements (RISC OS)
 
